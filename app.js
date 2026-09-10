@@ -250,6 +250,14 @@ matchForm.addEventListener('submit', async (e) => {
         return Swal.fire({ title: 'Epa', text: 'Tenés que elegir los jugadores de ambos equipos.', icon: 'warning', background: '#1e293b', color: '#f8fafc' });
     }
 
+    if (teamA.length !== teamB.length) {
+        return Swal.fire({ title: 'Equipos desparejos', text: `El Equipo A tiene ${teamA.length} y el Equipo B tiene ${teamB.length}. Tienen que ser exactamente la misma cantidad.`, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+    }
+
+    if (teamA.length < 2 || teamA.length > 3) {
+        return Swal.fire({ title: 'Formato inválido', text: 'Los partidos de truco solo pueden ser 2v2 (Pica Pica) o 3v3 (Gallo).', icon: 'warning', background: '#1e293b', color: '#f8fafc' });
+    }
+
     const intersect = teamA.filter(value => teamB.includes(value));
     if (intersect.length > 0) {
         return Swal.fire({ title: 'Che!', text: 'Hay jugadores que están en los dos equipos a la vez.', icon: 'error', background: '#1e293b', color: '#f8fafc' });
