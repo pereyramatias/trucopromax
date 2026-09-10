@@ -11,8 +11,8 @@ const loadingLeaderboard = document.getElementById('loading-leaderboard');
 const tableContainer = document.getElementById('table-container');
 
 const matchForm = document.getElementById('match-form');
-const teamASelect = document.getElementById('team-a');
-const teamBSelect = document.getElementById('team-b');
+const teamAChipsContainer = document.getElementById('team-a-chips');
+const teamBChipsContainer = document.getElementById('team-b-chips');
 const btnWinA = document.getElementById('btn-win-a');
 const btnWinB = document.getElementById('btn-win-b');
 const iconWinA = document.getElementById('icon-win-a');
@@ -23,6 +23,10 @@ const btnSaveMatch = document.getElementById('btn-save-match');
 const playerForm = document.getElementById('player-form');
 const newPlayerName = document.getElementById('new-player-name');
 const btnSavePlayer = document.getElementById('btn-save-player');
+
+// State para chips
+let selectedTeamA = new Set();
+let selectedTeamB = new Set();
 
 // Nav logic
 function switchView(viewName) {
@@ -35,9 +39,11 @@ function switchView(viewName) {
 
     document.querySelectorAll('.nav-btn').forEach(btn => {
         if(btn.dataset.target === `view-${viewName}`) {
-            btn.classList.add('active');
+            btn.classList.add('active', 'text-white');
+            btn.classList.remove('text-slate-500');
         } else {
-            btn.classList.remove('active');
+            btn.classList.remove('active', 'text-white');
+            btn.classList.add('text-slate-500');
         }
     });
 }
@@ -89,7 +95,7 @@ async function fetchData() {
 
         renderLeaderboard();
         renderHistory();
-        updateSelects();
+        renderTeamChips();
     } catch (error) {
         console.error(error);
         showAlert('Error', 'No se pudo sincronizar con los servidores.', 'error');
@@ -198,11 +204,47 @@ function renderHistory() {
     });
 }
 
-function updateSelects() {
+window.togglePlayerSelection = function(team, playerName) {
+    if (team === 'A') {
+        if (selectedTeamA.has(playerName)) selectedTeamA.delete(playerName);
+        else selectedTeamA.add(playerName);
+        selectedTeamB.delete(playerName);
+    } else {
+        if (selectedTeamB.has(playerName)) selectedTeamB.delete(playerName);
+        else selectedTeamB.add(playerName);
+        selectedTeamA.delete(playerName);
+    }
+    renderTeamChips();
+};
+
+function renderTeamChips() {
     const sorted = [...appData.players].sort((a, b) => a.nombre.localeCompare(b.nombre));
-    const optionsHtml = sorted.map(p => `<option value="${p.nombre}">${p.nombre}</option>`).join('');
-    teamASelect.innerHTML = optionsHtml;
-    teamBSelect.innerHTML = optionsHtml;
+    
+    // Chips A
+    teamAChipsContainer.innerHTML = sorted.map(p => {
+        const isSelected = selectedTeamA.has(p.nombre);
+        const isDisabled = selectedTeamB.has(p.nombre);
+        const btnClass = isSelected 
+            ? 'bg-blue-500 text-white shadow-[0_0_12px_rgba(59,130,246,0.5)] border-blue-400' 
+            : (isDisabled ? 'bg-slate-800/30 text-slate-600 opacity-50 cursor-not-allowed border-transparent' : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border-white/10');
+        
+        return `<button type="button" onclick="togglePlayerSelection('A', '${p.nombre}')" class="px-3 py-1.5 rounded-full text-[13px] font-semibold transition-all border ${btnClass}" ${isDisabled ? 'disabled' : ''}>
+            ${p.nombre}
+        </button>`;
+    }).join('');
+
+    // Chips B
+    teamBChipsContainer.innerHTML = sorted.map(p => {
+        const isSelected = selectedTeamB.has(p.nombre);
+        const isDisabled = selectedTeamA.has(p.nombre);
+        const btnClass = isSelected 
+            ? 'bg-red-500 text-white shadow-[0_0_12px_rgba(239,68,68,0.5)] border-red-400' 
+            : (isDisabled ? 'bg-slate-800/30 text-slate-600 opacity-50 cursor-not-allowed border-transparent' : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border-white/10');
+        
+        return `<button type="button" onclick="togglePlayerSelection('B', '${p.nombre}')" class="px-3 py-1.5 rounded-full text-[13px] font-semibold transition-all border ${btnClass}" ${isDisabled ? 'disabled' : ''}>
+            ${p.nombre}
+        </button>`;
+    }).join('');
 }
 
 btnWinA.addEventListener('click', () => {
@@ -223,14 +265,13 @@ btnWinB.addEventListener('click', () => {
 
 matchForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const teamA = Array.from(teamASelect.selectedOptions).map(opt => opt.value);
-    const teamB = Array.from(teamBSelect.selectedOptions).map(opt => opt.value);
+    const teamA = Array.from(selectedTeamA);
+    const teamB = Array.from(selectedTeamB);
     const winner = matchWinnerInput.value;
 
     if (teamA.length === 0 || teamB.length === 0) return showAlert('Atención', 'Elegí los jugadores de ambos equipos.', 'warning');
     if (teamA.length !== teamB.length) return showAlert('Equipos desparejos', `El Equipo Azul tiene ${teamA.length} y el Equipo Rojo tiene ${teamB.length}. Tienen que ser la misma cantidad.`, 'error');
     if (teamA.length < 2 || teamA.length > 3) return showAlert('Formato inválido', 'Solo se permite jugar 2v2 (Pica Pica) o 3v3 (Gallo).', 'warning');
-    if (teamA.filter(v => teamB.includes(v)).length > 0) return showAlert('Error', 'No podés poner al mismo jugador en los dos equipos a la vez.', 'error');
     if (!winner) return showAlert('Falta', 'Tenés que seleccionar quién ganó el partido.', 'warning');
 
     btnSaveMatch.disabled = true;
@@ -246,7 +287,11 @@ matchForm.addEventListener('submit', async (e) => {
         const result = await response.json();
         if(result.success) {
             Toast.fire({ icon: 'success', title: '¡Partido guardado con éxito!' });
-            matchForm.reset();
+            
+            // Reset Form State
+            selectedTeamA.clear();
+            selectedTeamB.clear();
+            renderTeamChips();
             matchWinnerInput.value = '';
             
             btnWinA.className = "py-5 rounded-2xl font-bold text-sm border border-blue-500/30 bg-blue-500/10 text-blue-400 transition-all flex flex-col items-center gap-2 active:scale-95";
