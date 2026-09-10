@@ -170,16 +170,29 @@ function renderLeaderboard() {
 
 function renderHistory() {
     historyContainer.innerHTML = '';
+    const statsContainer = document.getElementById('history-stats');
+    const stat2v2 = document.getElementById('stat-2v2');
+    const stat3v3 = document.getElementById('stat-3v3');
+
     if (!appData.matches || appData.matches.length === 0) {
         historyContainer.innerHTML = '<div class="glass-panel p-8 rounded-3xl text-center"><i class="ph ph-scroll text-4xl text-slate-600 mb-3 block"></i><p class="text-slate-400 text-sm">Aún no hay partidos jugados.</p></div>';
+        if (statsContainer) statsContainer.classList.add('hidden');
         return;
     }
+
+    if (statsContainer) statsContainer.classList.remove('hidden');
+
+    let count2v2 = 0;
+    let count3v3 = 0;
 
     const sortedMatches = [...appData.matches].reverse();
     sortedMatches.forEach(match => {
         const teamAArr = match.teamA ? match.teamA.split(',').map(s => s.trim()) : [];
         const teamBArr = match.teamB ? match.teamB.split(',').map(s => s.trim()) : [];
         
+        if (teamAArr.length === 2) count2v2++;
+        else if (teamAArr.length === 3) count3v3++;
+
         const isWinA = match.winner === 'A';
         const isWinB = match.winner === 'B';
         const dateStr = new Date(match.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
@@ -238,6 +251,9 @@ function renderHistory() {
         `;
         historyContainer.appendChild(card);
     });
+
+    if (stat2v2) stat2v2.innerText = count2v2;
+    if (stat3v3) stat3v3.innerText = count3v3;
 }
 
 window.deleteMatch = async function(matchId) {
