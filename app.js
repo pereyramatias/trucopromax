@@ -304,7 +304,7 @@ function renderTeamChips() {
     
     // Chips A
     teamAChipsContainer.innerHTML = sorted.map(p => {
-        const displayName = p.apodo ? p.apodo : p.nombre;
+        const displayName = p.nombre;
         const isSelected = selectedTeamA.has(p.nombre);
         const isDisabled = selectedTeamB.has(p.nombre);
         const btnClass = isSelected 
@@ -318,7 +318,7 @@ function renderTeamChips() {
 
     // Chips B
     teamBChipsContainer.innerHTML = sorted.map(p => {
-        const displayName = p.apodo ? p.apodo : p.nombre;
+        const displayName = p.nombre;
         const isSelected = selectedTeamB.has(p.nombre);
         const isDisabled = selectedTeamA.has(p.nombre);
         const btnClass = isSelected 
