@@ -61,7 +61,19 @@ async function fetchData() {
 
     try {
         const response = await fetch(API_URL);
-        appData = await response.json();
+        const data = await response.json();
+        
+        // Manejo de compatibilidad: si la API vieja devuelve un Array en vez del objeto nuevo
+        if (Array.isArray(data)) {
+            appData = { players: data, matches: [] };
+        } else {
+            appData = data;
+        }
+
+        // Seguros por si vienen propiedades vacías
+        if (!appData.players) appData.players = [];
+        if (!appData.matches) appData.matches = [];
+
         renderLeaderboard();
         renderHistory();
         updateSelects();
