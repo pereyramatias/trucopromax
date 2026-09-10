@@ -1,9 +1,7 @@
-const API_URL = 'https://script.google.com/macros/s/AKfycbxsSyPw8iKAejXlMD3mOXmsV72UPTu3icybX0obd4IZyaWyZPXRjMniOEq3nsrJG7fH/exec';
+// TODO: Reemplazar por tu URL de Google Apps Script Web App
+const API_URL = 'https://script.google.com/macros/s/AKfycbxv0RbOmm-bT8VTweqcPQi8rQZuXR703E7Y_Mfm0apnUvyZ8Y44XSaSKU62g0FLo1g/exec';
 
-let appData = {
-    players: [],
-    matches: []
-};
+let appData = { players: [], matches: [] };
 
 // DOM Elements
 const views = document.querySelectorAll('.view-section');
@@ -12,14 +10,13 @@ const historyContainer = document.getElementById('history-container');
 const loadingLeaderboard = document.getElementById('loading-leaderboard');
 const tableContainer = document.getElementById('table-container');
 
-// Forms
 const matchForm = document.getElementById('match-form');
 const teamASelect = document.getElementById('team-a');
 const teamBSelect = document.getElementById('team-b');
-const pointsAInput = document.getElementById('points-a');
-const pointsBInput = document.getElementById('points-b');
 const btnWinA = document.getElementById('btn-win-a');
 const btnWinB = document.getElementById('btn-win-b');
+const iconWinA = document.getElementById('icon-win-a');
+const iconWinB = document.getElementById('icon-win-b');
 const matchWinnerInput = document.getElementById('match-winner');
 const btnSaveMatch = document.getElementById('btn-save-match');
 
@@ -27,7 +24,7 @@ const playerForm = document.getElementById('player-form');
 const newPlayerName = document.getElementById('new-player-name');
 const btnSavePlayer = document.getElementById('btn-save-player');
 
-// Navigation logic
+// Nav logic
 function switchView(viewName) {
     views.forEach(view => {
         view.classList.add('hidden');
@@ -36,28 +33,41 @@ function switchView(viewName) {
         }
     });
 
-    // Deseleccionar botones del nav
     document.querySelectorAll('.nav-btn').forEach(btn => {
         if(btn.dataset.target === `view-${viewName}`) {
-            btn.classList.add('text-sky-300');
-            btn.classList.remove('text-slate-400');
+            btn.classList.add('active');
         } else {
-            btn.classList.remove('text-sky-300');
-            btn.classList.add('text-slate-400');
+            btn.classList.remove('active');
         }
     });
 }
 
-// Fetch Data from Google Sheets
+// Global SweetAlert config for Premium look
+const Toast = Swal.mixin({
+    toast: true,
+    position: 'top',
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+    background: 'rgba(15, 23, 42, 0.95)',
+    color: '#fff',
+    iconColor: '#38bdf8',
+    customClass: { popup: 'backdrop-blur-md border border-white/10 rounded-2xl mt-4' }
+});
+
+const showAlert = (title, text, icon) => {
+    Swal.fire({
+        title, text, icon,
+        background: '#0f172a',
+        color: '#f8fafc',
+        confirmButtonColor: '#0ea5e9',
+        customClass: { popup: 'border border-white/10 rounded-3xl' }
+    });
+};
+
 async function fetchData() {
     if(!API_URL || API_URL === 'PEGÁ_TU_LINK_DE_APPS_SCRIPT_ACÁ') {
-        Swal.fire({
-            title: 'Falta configuración',
-            text: 'Pegá la URL de tu Apps Script en el archivo app.js (constante API_URL).',
-            icon: 'info',
-            background: '#1e293b',
-            color: '#f8fafc'
-        });
+        showAlert('Falta configuración', 'Pegá la URL de tu Apps Script.', 'info');
         return;
     }
 
@@ -65,31 +75,15 @@ async function fetchData() {
     tableContainer.classList.add('hidden');
 
     try {
-        const timestamp = new Date().getTime();
-        const urlWithCacheBuster = API_URL + (API_URL.includes('?') ? '&' : '?') + 't=' + timestamp;
-        const response = await fetch(urlWithCacheBuster);
+        const url = API_URL + (API_URL.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
+        const response = await fetch(url);
         const data = await response.json();
         
-        // Si el Apps Script devuelve un error controlado (ej: faltan pestañas)
-        if (data.error) {
-            Swal.fire({
-                title: 'Error en el Google Sheet',
-                text: data.error,
-                icon: 'error',
-                background: '#1e293b',
-                color: '#f8fafc'
-            });
-            return;
-        }
+        if (data.error) return showAlert('Error', data.error, 'error');
 
-        // Manejo de compatibilidad: si la API vieja devuelve un Array en vez del objeto nuevo
-        if (Array.isArray(data)) {
-            appData = { players: data, matches: [] };
-        } else {
-            appData = data;
-        }
+        if (Array.isArray(data)) appData = { players: data, matches: [] };
+        else appData = data;
 
-        // Seguros por si vienen propiedades vacías
         if (!appData.players) appData.players = [];
         if (!appData.matches) appData.matches = [];
 
@@ -98,106 +92,105 @@ async function fetchData() {
         updateSelects();
     } catch (error) {
         console.error(error);
-        Swal.fire({
-            title: 'Error',
-            text: 'No se pudieron cargar los datos de la liga.',
-            icon: 'error',
-            background: '#1e293b',
-            color: '#f8fafc'
-        });
+        showAlert('Error', 'No se pudo sincronizar con los servidores.', 'error');
     } finally {
         loadingLeaderboard.classList.add('hidden');
-        if (appData.players.length > 0) {
-            tableContainer.classList.remove('hidden');
-        } else {
-            loadingLeaderboard.innerHTML = '<p class="text-slate-400 py-8">Todavía no hay jugadores cargados.</p>';
+        if (appData.players.length > 0) tableContainer.classList.remove('hidden');
+        else {
+            loadingLeaderboard.innerHTML = '<p class="text-slate-500 py-8 text-sm">No hay jugadores cargados todavía.</p>';
             loadingLeaderboard.classList.remove('hidden');
         }
     }
 }
 
-// Render Leaderboard
+// Generate Avatar Initials
+function getInitials(name) {
+    return name.substring(0, 2).toUpperCase();
+}
+
 function renderLeaderboard() {
     leaderboardBody.innerHTML = '';
     appData.players.forEach((player, index) => {
-        let medal = '';
-        if (index === 0) medal = '🥇';
-        else if (index === 1) medal = '🥈';
-        else if (index === 2) medal = '🥉';
-        else medal = `<span class="text-slate-500 font-medium">${index + 1}</span>`;
+        let badge = '';
+        if (index === 0) badge = '<div class="w-8 h-8 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center border border-yellow-500/30 text-xs font-bold shadow-[0_0_10px_rgba(234,179,8,0.3)]">1</div>';
+        else if (index === 1) badge = '<div class="w-8 h-8 rounded-full bg-slate-300/20 text-slate-300 flex items-center justify-center border border-slate-300/30 text-xs font-bold">2</div>';
+        else if (index === 2) badge = '<div class="w-8 h-8 rounded-full bg-amber-700/20 text-amber-600 flex items-center justify-center border border-amber-700/30 text-xs font-bold">3</div>';
+        else badge = `<span class="text-slate-600 font-semibold text-xs ml-3">${index + 1}</span>`;
 
         const row = document.createElement('tr');
-        row.className = "border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors";
+        row.className = "border-b border-white/5 hover:bg-white/[0.02] transition-colors";
         row.innerHTML = `
-            <td class="p-4 text-center text-xl drop-shadow-md">${medal}</td>
-            <td class="p-4 font-bold text-white tracking-wide">${player.nombre}</td>
-            <td class="p-4 text-center font-black text-sky-400 text-xl">${player.puntos}</td>
-            <td class="p-4 text-center text-slate-400 font-medium">${player.jugados}</td>
-            <td class="p-4 text-center text-slate-400 font-medium">${player.winrate}%</td>
+            <td class="py-4 pl-5">${badge}</td>
+            <td class="py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-brand-500/10 text-brand-400 flex items-center justify-center text-xs font-bold border border-brand-500/20">
+                        ${getInitials(player.nombre)}
+                    </div>
+                    <span class="font-semibold text-white">${player.nombre}</span>
+                </div>
+            </td>
+            <td class="py-4 text-center font-bold text-brand-400 text-lg">${player.puntos}</td>
+            <td class="py-4 text-center text-slate-400 font-medium pr-4">${player.jugados}</td>
         `;
         leaderboardBody.appendChild(row);
     });
 }
 
-// Render History
 function renderHistory() {
     historyContainer.innerHTML = '';
-    
     if (!appData.matches || appData.matches.length === 0) {
-        historyContainer.innerHTML = '<div class="glass-card p-8 rounded-2xl text-center"><p class="text-slate-400 text-lg">Aún no hay partidos jugados. ¡Armá el primer equipo!</p></div>';
+        historyContainer.innerHTML = '<div class="glass-panel p-8 rounded-3xl text-center"><i class="ph ph-scroll text-4xl text-slate-600 mb-3 block"></i><p class="text-slate-400 text-sm">Aún no hay partidos jugados.</p></div>';
         return;
     }
 
-    // Orden cronológico inverso (los más nuevos arriba)
     const sortedMatches = [...appData.matches].reverse();
-
     sortedMatches.forEach(match => {
         const teamAArr = match.teamA ? match.teamA.split(',').map(s => s.trim()) : [];
         const teamBArr = match.teamB ? match.teamB.split(',').map(s => s.trim()) : [];
         
-        // Determinar Badge
-        let badgeType = '';
-        if (teamAArr.length === 2 && teamBArr.length === 2) badgeType = 'Pica Pica ✌️';
-        else if (teamAArr.length === 3 && teamBArr.length === 3) badgeType = 'Gallo 🐓';
-        else badgeType = `${teamAArr.length}v${teamBArr.length}`;
-
         const isWinA = match.winner === 'A';
         const isWinB = match.winner === 'B';
-
-        const dateStr = new Date(match.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+        const dateStr = new Date(match.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
 
         const card = document.createElement('div');
-        card.className = "glass-card rounded-3xl p-5 shadow-lg border-l-4 border-l-sky-500 relative overflow-hidden transition-all hover:scale-[1.01]";
-        
+        card.className = "glass-panel rounded-3xl p-5 relative overflow-hidden transition-all";
         card.innerHTML = `
-            <div class="flex justify-between items-center mb-4">
-                <span class="text-xs text-slate-400 font-medium tracking-wide">📅 ${dateStr}</span>
-                <span class="bg-slate-800/80 text-sky-300 text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-inner">${badgeType}</span>
+            <div class="flex justify-between items-center mb-5">
+                <div class="flex items-center gap-2 text-xs text-slate-400 font-medium">
+                    <i class="ph ph-calendar-blank"></i> ${dateStr}
+                </div>
+                <span class="bg-brand-500/10 text-brand-400 border border-brand-500/20 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-inner">
+                    ${teamAArr.length}v${teamBArr.length}
+                </span>
             </div>
             
             <div class="flex justify-between items-stretch gap-3">
-                <!-- Team A -->
-                <div class="flex-1 flex flex-col justify-between text-center p-3 rounded-2xl ${isWinA ? 'bg-gradient-to-b from-blue-900/40 to-blue-800/20 border border-blue-500/40 shadow-[0_0_15px_rgba(59,130,246,0.15)]' : 'bg-slate-800/40 border border-transparent'}">
-                    <div class="text-blue-400 font-black mb-3 drop-shadow-sm ${isWinA ? 'text-2xl' : 'text-lg'}">
-                        ${match.ptsA !== "" && match.ptsA !== undefined ? match.ptsA : (isWinA ? '🏆' : '-')}
+                <!-- A -->
+                <div class="flex-1 flex flex-col justify-between p-4 rounded-2xl ${isWinA ? 'bg-blue-500/10 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.1)]' : 'bg-slate-800/30 border border-white/5'}">
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-2 h-2 rounded-full ${isWinA ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]' : 'bg-slate-600'}"></div>
+                        <span class="text-xs font-bold ${isWinA ? 'text-blue-400' : 'text-slate-500'}">AZUL</span>
                     </div>
-                    <div class="text-[12px] font-medium text-slate-300 flex flex-col gap-1.5 mt-auto">
-                        ${teamAArr.map(p => `<span>${p}</span>`).join('')}
+                    <div class="text-[13px] font-medium text-slate-300 flex flex-col gap-2">
+                        ${teamAArr.map(p => `<span class="truncate">${p}</span>`).join('')}
                     </div>
+                    ${isWinA ? '<div class="mt-4"><i class="ph-fill ph-trophy text-blue-400 text-xl drop-shadow-md"></i></div>' : ''}
                 </div>
 
-                <div class="flex items-center justify-center px-1">
-                    <span class="bg-slate-800 text-slate-400 font-black italic text-xs px-2 py-1 rounded-full shadow-inner">VS</span>
+                <div class="flex items-center justify-center">
+                    <span class="text-slate-600 font-black italic text-xs">VS</span>
                 </div>
 
-                <!-- Team B -->
-                <div class="flex-1 flex flex-col justify-between text-center p-3 rounded-2xl ${isWinB ? 'bg-gradient-to-b from-red-900/40 to-red-800/20 border border-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.15)]' : 'bg-slate-800/40 border border-transparent'}">
-                    <div class="text-red-400 font-black mb-3 drop-shadow-sm ${isWinB ? 'text-2xl' : 'text-lg'}">
-                        ${match.ptsB !== "" && match.ptsB !== undefined ? match.ptsB : (isWinB ? '🏆' : '-')}
+                <!-- B -->
+                <div class="flex-1 flex flex-col justify-between p-4 rounded-2xl ${isWinB ? 'bg-red-500/10 border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'bg-slate-800/30 border border-white/5'}">
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-2 h-2 rounded-full ${isWinB ? 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.8)]' : 'bg-slate-600'}"></div>
+                        <span class="text-xs font-bold ${isWinB ? 'text-red-400' : 'text-slate-500'}">ROJO</span>
                     </div>
-                    <div class="text-[12px] font-medium text-slate-300 flex flex-col gap-1.5 mt-auto">
-                        ${teamBArr.map(p => `<span>${p}</span>`).join('')}
+                    <div class="text-[13px] font-medium text-slate-300 flex flex-col gap-2">
+                        ${teamBArr.map(p => `<span class="truncate">${p}</span>`).join('')}
                     </div>
+                    ${isWinB ? '<div class="mt-4"><i class="ph-fill ph-trophy text-red-400 text-xl drop-shadow-md"></i></div>' : ''}
                 </div>
             </div>
         `;
@@ -205,7 +198,6 @@ function renderHistory() {
     });
 }
 
-// Update Multiple Selects
 function updateSelects() {
     const sorted = [...appData.players].sort((a, b) => a.nombre.localeCompare(b.nombre));
     const optionsHtml = sorted.map(p => `<option value="${p.nombre}">${p.nombre}</option>`).join('');
@@ -213,145 +205,95 @@ function updateSelects() {
     teamBSelect.innerHTML = optionsHtml;
 }
 
-// Winner Selection UI Toggle
 btnWinA.addEventListener('click', () => {
     matchWinnerInput.value = 'A';
-    btnWinA.classList.replace('bg-slate-800', 'bg-blue-600');
-    btnWinA.classList.replace('text-blue-400', 'text-white');
-    btnWinA.classList.replace('border-blue-500/50', 'border-blue-400');
-    
-    btnWinB.classList.replace('bg-red-600', 'bg-slate-800');
-    btnWinB.classList.replace('text-white', 'text-red-400');
-    btnWinB.classList.replace('border-red-400', 'border-red-500/50');
+    btnWinA.className = "py-5 rounded-2xl font-bold text-sm border-2 border-blue-500 bg-blue-500/20 text-white transition-all scale-[1.02] flex flex-col items-center gap-2 shadow-[0_0_15px_rgba(59,130,246,0.3)]";
+    iconWinA.classList.remove('opacity-0');
+    btnWinB.className = "py-5 rounded-2xl font-bold text-sm border border-red-500/20 bg-red-500/5 text-red-500/50 transition-all flex flex-col items-center gap-2 grayscale";
+    iconWinB.classList.add('opacity-0');
 });
 
 btnWinB.addEventListener('click', () => {
     matchWinnerInput.value = 'B';
-    btnWinB.classList.replace('bg-slate-800', 'bg-red-600');
-    btnWinB.classList.replace('text-red-400', 'text-white');
-    btnWinB.classList.replace('border-red-500/50', 'border-red-400');
-    
-    btnWinA.classList.replace('bg-blue-600', 'bg-slate-800');
-    btnWinA.classList.replace('text-white', 'text-blue-400');
-    btnWinA.classList.replace('border-blue-400', 'border-blue-500/50');
+    btnWinB.className = "py-5 rounded-2xl font-bold text-sm border-2 border-red-500 bg-red-500/20 text-white transition-all scale-[1.02] flex flex-col items-center gap-2 shadow-[0_0_15px_rgba(239,68,68,0.3)]";
+    iconWinB.classList.remove('opacity-0');
+    btnWinA.className = "py-5 rounded-2xl font-bold text-sm border border-blue-500/20 bg-blue-500/5 text-blue-500/50 transition-all flex flex-col items-center gap-2 grayscale";
+    iconWinA.classList.add('opacity-0');
 });
 
-// Save Match Submit
 matchForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
     const teamA = Array.from(teamASelect.selectedOptions).map(opt => opt.value);
     const teamB = Array.from(teamBSelect.selectedOptions).map(opt => opt.value);
-    const ptsA = pointsAInput.value;
-    const ptsB = pointsBInput.value;
     const winner = matchWinnerInput.value;
 
-    if (teamA.length === 0 || teamB.length === 0) {
-        return Swal.fire({ title: 'Epa', text: 'Tenés que elegir los jugadores de ambos equipos.', icon: 'warning', background: '#1e293b', color: '#f8fafc' });
-    }
-
-    if (teamA.length !== teamB.length) {
-        return Swal.fire({ title: 'Equipos desparejos', text: `El Equipo A tiene ${teamA.length} y el Equipo B tiene ${teamB.length}. Tienen que ser exactamente la misma cantidad.`, icon: 'error', background: '#1e293b', color: '#f8fafc' });
-    }
-
-    if (teamA.length < 2 || teamA.length > 3) {
-        return Swal.fire({ title: 'Formato inválido', text: 'Los partidos de truco solo pueden ser 2v2 (Pica Pica) o 3v3 (Gallo).', icon: 'warning', background: '#1e293b', color: '#f8fafc' });
-    }
-
-    const intersect = teamA.filter(value => teamB.includes(value));
-    if (intersect.length > 0) {
-        return Swal.fire({ title: 'Che!', text: 'Hay jugadores que están en los dos equipos a la vez.', icon: 'error', background: '#1e293b', color: '#f8fafc' });
-    }
-
-    if (!winner) {
-        return Swal.fire({ title: 'Falta algo', text: 'Elegí qué equipo ganó el partido.', icon: 'warning', background: '#1e293b', color: '#f8fafc' });
-    }
+    if (teamA.length === 0 || teamB.length === 0) return showAlert('Atención', 'Elegí los jugadores de ambos equipos.', 'warning');
+    if (teamA.length !== teamB.length) return showAlert('Equipos desparejos', `El Equipo Azul tiene ${teamA.length} y el Equipo Rojo tiene ${teamB.length}. Tienen que ser la misma cantidad.`, 'error');
+    if (teamA.length < 2 || teamA.length > 3) return showAlert('Formato inválido', 'Solo se permite jugar 2v2 (Pica Pica) o 3v3 (Gallo).', 'warning');
+    if (teamA.filter(v => teamB.includes(v)).length > 0) return showAlert('Error', 'No podés poner al mismo jugador en los dos equipos a la vez.', 'error');
+    if (!winner) return showAlert('Falta', 'Tenés que seleccionar quién ganó el partido.', 'warning');
 
     btnSaveMatch.disabled = true;
-    btnSaveMatch.innerHTML = 'Guardando... <span class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full ml-2"></span>';
+    btnSaveMatch.innerHTML = '<i class="ph ph-spinner animate-spin text-xl"></i> Guardando...';
 
     try {
         const response = await fetch(API_URL, {
-            method: 'POST',
-            redirect: 'follow', // Necesario para Google Apps Script
+            method: 'POST', redirect: 'follow',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'addMatch', teamA, teamB, ptsA, ptsB, winner })
+            body: JSON.stringify({ action: 'addMatch', teamA, teamB, winner })
         });
         
         const result = await response.json();
         if(result.success) {
-            Swal.fire({ title: '¡Cantado!', text: 'El partido se guardó de 10.', icon: 'success', background: '#1e293b', color: '#f8fafc' });
+            Toast.fire({ icon: 'success', title: '¡Partido guardado con éxito!' });
             matchForm.reset();
             matchWinnerInput.value = '';
             
-            // Reset winner buttons UI
-            btnWinA.className = "flex-1 py-4 rounded-2xl font-black text-lg border-2 border-blue-500/50 bg-slate-800 text-blue-400 shadow-md transition-all active:scale-95";
-            btnWinB.className = "flex-1 py-4 rounded-2xl font-black text-lg border-2 border-red-500/50 bg-slate-800 text-red-400 shadow-md transition-all active:scale-95";
+            btnWinA.className = "py-5 rounded-2xl font-bold text-sm border border-blue-500/30 bg-blue-500/10 text-blue-400 transition-all flex flex-col items-center gap-2 active:scale-95";
+            iconWinA.classList.add('opacity-0');
+            btnWinB.className = "py-5 rounded-2xl font-bold text-sm border border-red-500/30 bg-red-500/10 text-red-400 transition-all flex flex-col items-center gap-2 active:scale-95";
+            iconWinB.classList.add('opacity-0');
             
-            // Volver al Historial y recargar en segundo plano
             switchView('history');
             fetchData();
-        } else {
-            Swal.fire({ title: 'Error', text: result.message || 'Algo falló en el server', icon: 'error', background: '#1e293b', color: '#f8fafc' });
-        }
+        } else showAlert('Error', result.message, 'error');
     } catch (error) {
-        Swal.fire({ title: 'Error', text: 'No se pudo conectar con la base de datos.', icon: 'error', background: '#1e293b', color: '#f8fafc' });
+        showAlert('Error', 'No se pudo conectar con la base de datos.', 'error');
     } finally {
         btnSaveMatch.disabled = false;
-        btnSaveMatch.innerHTML = 'GUARDAR RESULTADO 🚀';
+        btnSaveMatch.innerHTML = '<i class="ph ph-paper-plane-tilt text-xl"></i> Guardar Partido';
     }
 });
 
-// Save New Player Submit
 playerForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
     const name = newPlayerName.value.trim();
     if (!name) return;
 
     btnSavePlayer.disabled = true;
-    btnSavePlayer.innerHTML = 'Agregando... <span class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full ml-2"></span>';
+    btnSavePlayer.innerHTML = '<i class="ph ph-spinner animate-spin text-xl"></i> Registrando...';
 
     try {
-        // Enviar POST request. Si el backend falla, caerá al catch.
         const response = await fetch(API_URL, {
-            method: 'POST',
-            redirect: 'follow',
+            method: 'POST', redirect: 'follow',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ action: 'addPlayer', name })
         });
-        
-        // Si el payload devuelto no es JSON válido, esto lanzará error y pasará al catch.
         const result = await response.json();
-        
         if(result.success) {
-            Swal.fire({ title: '¡Adentro!', text: `${name} ya está anotado para jugar.`, icon: 'success', background: '#1e293b', color: '#f8fafc' });
+            Toast.fire({ icon: 'success', title: `${name} ya puede jugar` });
             playerForm.reset();
             switchView('leaderboard');
             fetchData();
-        } else {
-            Swal.fire({ title: 'Mmm...', text: result.message || 'Error al agregar', icon: 'warning', background: '#1e293b', color: '#f8fafc' });
-        }
+        } else showAlert('Atención', result.message, 'warning');
     } catch (error) {
-        console.error("Error detallado:", error);
-        Swal.fire({ 
-            title: 'Ups...', 
-            text: 'Ocurrió un error al guardar. Intentá refrescar la página. Si el jugador se guardó en la planilla igual, puede ser un error de conexión (CORS) normal.', 
-            icon: 'error', 
-            background: '#1e293b', 
-            color: '#f8fafc' 
-        });
+        showAlert('Ups...', 'Ocurrió un error al guardar. Verificá si igual se guardó recargando la página.', 'error');
     } finally {
-        // Asegurarnos de habilitar el botón siempre
         btnSavePlayer.disabled = false;
-        btnSavePlayer.innerHTML = 'SUMAR AL ASADO 🍷';
+        btnSavePlayer.innerHTML = '<i class="ph ph-user-plus text-xl"></i> Sumar Jugador';
     }
 });
 
-// Listeners extras
 document.getElementById('btn-refresh').addEventListener('click', fetchData);
-
-// Iniciar cargando la tabla y asegurando estado inicial de botones
-document.querySelector('[data-target="view-leaderboard"]').classList.add('text-sky-300');
-document.querySelector('[data-target="view-leaderboard"]').classList.remove('text-slate-400');
+document.querySelector('[data-target="view-leaderboard"]').classList.add('active');
 fetchData();

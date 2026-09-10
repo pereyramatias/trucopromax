@@ -10,16 +10,18 @@ function doGet(e) {
   // Procesar Jugadores
   var dataJ = sheetJugadores.getDataRange().getValues();
   var players = [];
-  for (var i = 1; i < dataJ.length; i++) {
+  var startJ = (dataJ.length > 0 && String(dataJ[0][0]).toLowerCase().includes("nombre")) ? 1 : 0;
+  
+  for (var i = startJ; i < dataJ.length; i++) {
     var nombre = dataJ[i][0];
-    if (!nombre) continue; // Evitar filas vacías
+    if (!nombre) continue;
     
     var jugados = Number(dataJ[i][2] || 0);
     var victorias = Number(dataJ[i][3] || 0);
     var winrate = jugados > 0 ? Math.round((victorias / jugados) * 100) : 0;
     
     players.push({
-      nombre: nombre,
+      nombre: String(nombre),
       puntos: Number(dataJ[i][1] || 0),
       jugados: jugados,
       victorias: victorias,
@@ -31,7 +33,7 @@ function doGet(e) {
   // Ordenar de mayor a menor según puntos
   players.sort(function(a, b) { 
     if (b.puntos === a.puntos) {
-      return b.winrate - a.winrate; // Desempate por winrate
+      return b.winrate - a.winrate;
     }
     return b.puntos - a.puntos; 
   });
@@ -39,29 +41,26 @@ function doGet(e) {
   // Procesar Partidos
   var dataP = sheetPartidos.getDataRange().getValues();
   var matches = [];
-  // Asumimos: Fecha, Equipo A, Equipo B, Puntos A, Puntos B, Ganador
-  for (var j = 1; j < dataP.length; j++) {
+  var startP = (dataP.length > 0 && String(dataP[0][0]).toLowerCase().includes("fecha")) ? 1 : 0;
+  
+  for (var j = startP; j < dataP.length; j++) {
     var fecha = dataP[j][0];
     if (!fecha) continue;
     
     matches.push({
       fecha: fecha,
-      teamA: dataP[j][1],
-      teamB: dataP[j][2],
+      teamA: String(dataP[j][1] || ""),
+      teamB: String(dataP[j][2] || ""),
       ptsA: dataP[j][3] !== undefined ? dataP[j][3] : "",
       ptsB: dataP[j][4] !== undefined ? dataP[j][4] : "",
-      winner: dataP[j][5] || (dataP[j][3] > dataP[j][4] ? 'A' : 'B') // Fallback si no hay ganador guardado
+      winner: String(dataP[j][5] || "")
     });
   }
 
-  // Objeto de respuesta unificada
-  var responsePayload = {
+  return ContentService.createTextOutput(JSON.stringify({
     players: players,
     matches: matches
-  };
-
-  return ContentService.createTextOutput(JSON.stringify(responsePayload))
-    .setMimeType(ContentService.MimeType.JSON);
+  })).setMimeType(ContentService.MimeType.JSON);
 }
 
 function doPost(e) {
@@ -69,7 +68,7 @@ function doPost(e) {
   var sheetPartidos = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Partidos");
   
   if (!sheetJugadores || !sheetPartidos) {
-    return ContentService.createTextOutput(JSON.stringify({success: false, message: "Faltan crear las pestañas 'Jugadores' o 'Partidos'"}))
+    return ContentService.createTextOutput(JSON.stringify({success: false, message: "Faltan crear las pestañas"}))
       .setMimeType(ContentService.MimeType.JSON);
   }
 
@@ -80,15 +79,16 @@ function doPost(e) {
     if (action === 'addPlayer') {
       var name = body.name.trim();
       var data = sheetJugadores.getDataRange().getValues();
+      var startJ = (data.length > 0 && String(data[0][0]).toLowerCase().includes("nombre")) ? 1 : 0;
       
-      for (var i = 1; i < data.length; i++) {
+      for (var i = startJ; i < data.length; i++) {
         if (data[i][0] && data[i][0].toString().toLowerCase() === name.toLowerCase()) {
           return ContentService.createTextOutput(JSON.stringify({success: false, message: "El jugador ya existe maestro"}))
             .setMimeType(ContentService.MimeType.JSON);
         }
       }
       
-      sheetJugadores.appendRow([name, 0, 0, 0, 0]); // Nombre, Puntos, Jugados, Victorias, Derrotas
+      sheetJugadores.appendRow([name, 0, 0, 0, 0]);
       return ContentService.createTextOutput(JSON.stringify({success: true, message: "Jugador agregado"}))
         .setMimeType(ContentService.MimeType.JSON);
     }
@@ -100,20 +100,16 @@ function doPost(e) {
       var ptsA = body.ptsA !== undefined ? body.ptsA : "";
       var ptsB = body.ptsB !== undefined ? body.ptsB : "";
 
-      // Registrar en el historial de partidos (6 columnas)
       sheetPartidos.appendRow([new Date(), teamA.join(", "), teamB.join(", "), ptsA, ptsB, winner]);
 
       var data = sheetJugadores.getDataRange().getValues();
+      var startJ = (data.length > 0 && String(data[0][0]).toLowerCase().includes("nombre")) ? 1 : 0;
       
-      // Actualizar a los jugadores
       function updatePlayer(playerName, isWinner) {
-        for (var i = 1; i < data.length; i++) {
-          if (data[i][0] === playerName) {
+        for (var i = startJ; i < data.length; i++) {
+          if (String(data[i][0]).trim() === playerName.trim()) {
             var row = i + 1;
-            
-            // Nuevo sistema de puntos del Tata: 1 punto al ganador, 0 al perdedor
             var pts = Number(data[i][1] || 0) + (isWinner ? 1 : 0);
-            
             var played = Number(data[i][2] || 0) + 1;
             var wins = Number(data[i][3] || 0) + (isWinner ? 1 : 0);
             var losses = Number(data[i][4] || 0) + (!isWinner ? 1 : 0);
@@ -130,7 +126,7 @@ function doPost(e) {
       teamA.forEach(function(p) { updatePlayer(p, winner === 'A'); });
       teamB.forEach(function(p) { updatePlayer(p, winner === 'B'); });
 
-      return ContentService.createTextOutput(JSON.stringify({success: true, message: "Partido guardado en el historial y stats actualizadas"}))
+      return ContentService.createTextOutput(JSON.stringify({success: true, message: "Partido guardado"}))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
