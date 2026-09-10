@@ -26,15 +26,14 @@ function doGet(e) {
       jugados: jugados,
       victorias: victorias,
       derrotas: Number(dataJ[i][4] || 0),
-      winrate: winrate
+      winrate: winrate,
+      apodo: String(dataJ[i][6] || "") // Columna G
     });
   }
   
   // Ordenar de mayor a menor según puntos
   players.sort(function(a, b) { 
-    if (b.puntos === a.puntos) {
-      return b.winrate - a.winrate;
-    }
+    if (b.puntos === a.puntos) return b.winrate - a.winrate;
     return b.puntos - a.puntos; 
   });
 
@@ -51,9 +50,10 @@ function doGet(e) {
       fecha: fecha,
       teamA: String(dataP[j][1] || ""),
       teamB: String(dataP[j][2] || ""),
-      ptsA: dataP[j][3] !== undefined ? dataP[j][3] : "",
-      ptsB: dataP[j][4] !== undefined ? dataP[j][4] : "",
-      winner: String(dataP[j][5] || "")
+      ptsA: "",
+      ptsB: "",
+      winner: String(dataP[j][5] || ""),
+      createdBy: String(dataP[j][6] || "") // Columna G (Auditor)
     });
   }
 
@@ -76,6 +76,47 @@ function doPost(e) {
     var body = JSON.parse(e.postData.contents);
     var action = body.action;
 
+    // Login Action
+    if (action === 'login') {
+      var pin = String(body.pin).trim();
+      var data = sheetJugadores.getDataRange().getValues();
+      var startJ = (data.length > 0 && String(data[0][0]).toLowerCase().includes("nombre")) ? 1 : 0;
+      
+      for (var i = startJ; i < data.length; i++) {
+        var dbPin = String(data[i][5] || "").trim(); // Col F (Indice 5)
+        if (dbPin !== "" && dbPin === pin) {
+          return ContentService.createTextOutput(JSON.stringify({
+            success: true, 
+            user: { nombre: String(data[i][0]), apodo: String(data[i][6] || "") }
+          })).setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({success: false, message: "PIN incorrecto o no asignado"}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Edit Profile Action
+    if (action === 'updateProfile') {
+      var nombreUsuario = body.nombreUsuario;
+      var newApodo = body.newApodo;
+      var newPin = body.newPin;
+      var data = sheetJugadores.getDataRange().getValues();
+      var startJ = (data.length > 0 && String(data[0][0]).toLowerCase().includes("nombre")) ? 1 : 0;
+      
+      for (var i = startJ; i < data.length; i++) {
+        if (String(data[i][0]) === String(nombreUsuario)) {
+          var row = i + 1;
+          if (newPin) sheetJugadores.getRange(row, 6).setValue(newPin); // Columna F (PIN)
+          if (newApodo !== undefined) sheetJugadores.getRange(row, 7).setValue(newApodo); // Columna G (Apodo)
+          return ContentService.createTextOutput(JSON.stringify({success: true, message: "Perfil actualizado"}))
+            .setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({success: false, message: "Usuario no encontrado"}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Add Player Action
     if (action === 'addPlayer') {
       var name = body.name.trim();
       var data = sheetJugadores.getDataRange().getValues();
@@ -83,24 +124,26 @@ function doPost(e) {
       
       for (var i = startJ; i < data.length; i++) {
         if (data[i][0] && data[i][0].toString().toLowerCase() === name.toLowerCase()) {
-          return ContentService.createTextOutput(JSON.stringify({success: false, message: "El jugador ya existe maestro"}))
+          return ContentService.createTextOutput(JSON.stringify({success: false, message: "El jugador ya existe"}))
             .setMimeType(ContentService.MimeType.JSON);
         }
       }
       
-      sheetJugadores.appendRow([name, 0, 0, 0, 0]);
-      return ContentService.createTextOutput(JSON.stringify({success: true, message: "Jugador agregado"}))
+      // Nombre, Puntos, Jugados, Victorias, Derrotas, PIN ("0000"), Apodo ("")
+      sheetJugadores.appendRow([name, 0, 0, 0, 0, "0000", ""]);
+      return ContentService.createTextOutput(JSON.stringify({success: true, message: "Jugador agregado con PIN 0000"}))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
+    // Add Match Action
     if (action === 'addMatch') {
       var teamA = body.teamA || [];
       var teamB = body.teamB || [];
       var winner = body.winner;
-      var ptsA = body.ptsA !== undefined ? body.ptsA : "";
-      var ptsB = body.ptsB !== undefined ? body.ptsB : "";
+      var createdBy = body.createdBy || "";
 
-      sheetPartidos.appendRow([new Date(), teamA.join(", "), teamB.join(", "), ptsA, ptsB, winner]);
+      // Fecha, TeamA, TeamB, PtsA(vacío), PtsB(vacío), Ganador, CreadoPor (Col G)
+      sheetPartidos.appendRow([new Date(), teamA.join(", "), teamB.join(", "), "", "", winner, createdBy]);
 
       var data = sheetJugadores.getDataRange().getValues();
       var startJ = (data.length > 0 && String(data[0][0]).toLowerCase().includes("nombre")) ? 1 : 0;

@@ -1,7 +1,8 @@
 // TODO: Reemplazar por tu URL de Google Apps Script Web App
-const API_URL = 'https://script.google.com/macros/s/AKfycbxv0RbOmm-bT8VTweqcPQi8rQZuXR703E7Y_Mfm0apnUvyZ8Y44XSaSKU62g0FLo1g/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxA9_EAGAm7lolYZVRSE8Rx8bySK55Ibez4a-pdUSs7roOd_YhreOt1RXPt1ZqDRo8E/exec';
 
 let appData = { players: [], matches: [] };
+let currentUser = null;
 
 // DOM Elements
 const views = document.querySelectorAll('.view-section');
@@ -58,7 +59,7 @@ const Toast = Swal.mixin({
     background: 'rgba(15, 23, 42, 0.95)',
     color: '#fff',
     iconColor: '#38bdf8',
-    customClass: { popup: 'backdrop-blur-md border border-white/10 rounded-2xl mt-4' }
+    customClass: { popup: 'backdrop-blur-md border border-white/10 rounded-2xl mt-4 shadow-2xl' }
 });
 
 const showAlert = (title, text, icon) => {
@@ -71,6 +72,24 @@ const showAlert = (title, text, icon) => {
     });
 };
 
+// Check Session
+function checkSession() {
+    const savedUser = localStorage.getItem('truco_user');
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        document.getElementById('login-screen').classList.add('hidden');
+        
+        document.getElementById('profile-name').innerText = currentUser.apodo ? `${currentUser.nombre} "${currentUser.apodo}"` : currentUser.nombre;
+        document.getElementById('profile-avatar').innerText = getInitials(currentUser.apodo || currentUser.nombre);
+        document.getElementById('profile-apodo').value = currentUser.apodo || '';
+        
+        fetchData();
+    } else {
+        document.getElementById('login-screen').classList.remove('hidden');
+    }
+}
+
+// Fetch Data
 async function fetchData() {
     if(!API_URL || API_URL === 'PEGÁ_TU_LINK_DE_APPS_SCRIPT_ACÁ') {
         showAlert('Falta configuración', 'Pegá la URL de tu Apps Script.', 'info');
@@ -109,7 +128,6 @@ async function fetchData() {
     }
 }
 
-// Generate Avatar Initials
 function getInitials(name) {
     return name.substring(0, 2).toUpperCase();
 }
@@ -123,6 +141,8 @@ function renderLeaderboard() {
         else if (index === 2) badge = '<div class="w-8 h-8 rounded-full bg-amber-700/20 text-amber-600 flex items-center justify-center border border-amber-700/30 text-xs font-bold">3</div>';
         else badge = `<span class="text-slate-600 font-semibold text-xs ml-3">${index + 1}</span>`;
 
+        const displayName = player.apodo ? `${player.nombre} "${player.apodo}"` : player.nombre;
+
         const row = document.createElement('tr');
         row.className = "border-b border-white/5 hover:bg-white/[0.02] transition-colors";
         row.innerHTML = `
@@ -130,9 +150,9 @@ function renderLeaderboard() {
             <td class="py-4">
                 <div class="flex items-center gap-3">
                     <div class="w-9 h-9 rounded-full bg-brand-500/10 text-brand-400 flex items-center justify-center text-xs font-bold border border-brand-500/20">
-                        ${getInitials(player.nombre)}
+                        ${getInitials(player.apodo || player.nombre)}
                     </div>
-                    <span class="font-semibold text-white">${player.nombre}</span>
+                    <span class="font-semibold text-white">${displayName}</span>
                 </div>
             </td>
             <td class="py-4 text-center font-bold text-brand-400 text-lg">${player.puntos}</td>
@@ -157,6 +177,7 @@ function renderHistory() {
         const isWinA = match.winner === 'A';
         const isWinB = match.winner === 'B';
         const dateStr = new Date(match.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
+        const auditor = match.createdBy || 'Desconocido';
 
         const card = document.createElement('div');
         card.className = "glass-panel rounded-3xl p-5 relative overflow-hidden transition-all";
@@ -199,6 +220,12 @@ function renderHistory() {
                     ${isWinB ? '<div class="mt-4"><i class="ph-fill ph-trophy text-red-400 text-xl drop-shadow-md"></i></div>' : ''}
                 </div>
             </div>
+            
+            <!-- Auditoría -->
+            <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-end gap-1.5 opacity-60">
+                <i class="ph-fill ph-pencil-simple text-[10px]"></i>
+                <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Cargado por: ${auditor}</span>
+            </div>
         `;
         historyContainer.appendChild(card);
     });
@@ -222,6 +249,7 @@ function renderTeamChips() {
     
     // Chips A
     teamAChipsContainer.innerHTML = sorted.map(p => {
+        const displayName = p.apodo ? p.apodo : p.nombre;
         const isSelected = selectedTeamA.has(p.nombre);
         const isDisabled = selectedTeamB.has(p.nombre);
         const btnClass = isSelected 
@@ -229,12 +257,13 @@ function renderTeamChips() {
             : (isDisabled ? 'bg-slate-800/30 text-slate-600 opacity-50 cursor-not-allowed border-transparent' : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border-white/10');
         
         return `<button type="button" onclick="togglePlayerSelection('A', '${p.nombre}')" class="px-3 py-1.5 rounded-full text-[13px] font-semibold transition-all border ${btnClass}" ${isDisabled ? 'disabled' : ''}>
-            ${p.nombre}
+            ${displayName}
         </button>`;
     }).join('');
 
     // Chips B
     teamBChipsContainer.innerHTML = sorted.map(p => {
+        const displayName = p.apodo ? p.apodo : p.nombre;
         const isSelected = selectedTeamB.has(p.nombre);
         const isDisabled = selectedTeamA.has(p.nombre);
         const btnClass = isSelected 
@@ -242,7 +271,7 @@ function renderTeamChips() {
             : (isDisabled ? 'bg-slate-800/30 text-slate-600 opacity-50 cursor-not-allowed border-transparent' : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border-white/10');
         
         return `<button type="button" onclick="togglePlayerSelection('B', '${p.nombre}')" class="px-3 py-1.5 rounded-full text-[13px] font-semibold transition-all border ${btnClass}" ${isDisabled ? 'disabled' : ''}>
-            ${p.nombre}
+            ${displayName}
         </button>`;
     }).join('');
 }
@@ -268,6 +297,7 @@ btnWinB.addEventListener('click', () => {
     iconWinA.className = "text-4xl drop-shadow-md transition-all scale-90";
 });
 
+// SUBMIT: Match
 matchForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const teamA = Array.from(selectedTeamA);
@@ -286,20 +316,18 @@ matchForm.addEventListener('submit', async (e) => {
         const response = await fetch(API_URL, {
             method: 'POST', redirect: 'follow',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'addMatch', teamA, teamB, winner })
+            body: JSON.stringify({ action: 'addMatch', teamA, teamB, winner, createdBy: currentUser.nombre })
         });
         
         const result = await response.json();
         if(result.success) {
             Toast.fire({ icon: 'success', title: '¡Partido guardado con éxito!' });
             
-            // Reset Form State
             selectedTeamA.clear();
             selectedTeamB.clear();
             renderTeamChips();
             matchWinnerInput.value = '';
             
-            // Reset Buttons
             btnWinA.className = `${baseClassA} border-blue-500/20 bg-blue-500/5 text-blue-500 active:scale-95`;
             iconWinA.className = "text-4xl drop-shadow-md transition-all";
             btnWinB.className = `${baseClassB} border-red-500/20 bg-red-500/5 text-red-500 active:scale-95`;
@@ -316,6 +344,7 @@ matchForm.addEventListener('submit', async (e) => {
     }
 });
 
+// SUBMIT: New Player
 playerForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = newPlayerName.value.trim();
@@ -338,13 +367,103 @@ playerForm.addEventListener('submit', async (e) => {
             fetchData();
         } else showAlert('Atención', result.message, 'warning');
     } catch (error) {
-        showAlert('Ups...', 'Ocurrió un error al guardar. Verificá si igual se guardó recargando la página.', 'error');
+        showAlert('Ups...', 'Ocurrió un error al guardar.', 'error');
     } finally {
         btnSavePlayer.disabled = false;
         btnSavePlayer.innerHTML = '<i class="ph ph-user-plus text-xl"></i> Sumar Jugador';
     }
 });
 
+// SUBMIT: Login
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const pin = document.getElementById('login-pin').value.trim();
+    if (!pin) return;
+    
+    const btn = document.getElementById('btn-login');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-spinner animate-spin text-xl"></i> Validando...';
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST', redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'login', pin })
+        });
+        const result = await response.json();
+        
+        if(result.success) {
+            currentUser = result.user;
+            localStorage.setItem('truco_user', JSON.stringify(currentUser));
+            
+            document.getElementById('login-screen').classList.add('opacity-0');
+            setTimeout(() => {
+                document.getElementById('login-screen').classList.add('hidden');
+            }, 500);
+            
+            document.getElementById('profile-name').innerText = currentUser.apodo ? `${currentUser.nombre} "${currentUser.apodo}"` : currentUser.nombre;
+            document.getElementById('profile-avatar').innerText = getInitials(currentUser.apodo || currentUser.nombre);
+            document.getElementById('profile-apodo').value = currentUser.apodo || '';
+            
+            fetchData();
+            Toast.fire({ icon: 'success', title: `¡Bienvenido ${currentUser.apodo || currentUser.nombre}!` });
+        } else {
+            showAlert('PIN Inválido', 'El PIN no es correcto o no fue asignado.', 'error');
+        }
+    } catch(err) {
+        showAlert('Error', 'Problema de conexión.', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Ingresar <i class="ph-bold ph-arrow-right"></i>';
+    }
+});
+
+// LOGOUT
+document.getElementById('btn-logout').addEventListener('click', () => {
+    localStorage.removeItem('truco_user');
+    location.reload();
+});
+
+// SUBMIT: Update Profile
+document.getElementById('profile-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const newApodo = document.getElementById('profile-apodo').value.trim();
+    const newPin = document.getElementById('profile-pin').value.trim();
+    
+    const btn = document.getElementById('btn-save-profile');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-spinner animate-spin"></i> Guardando...';
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST', redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'updateProfile', nombreUsuario: currentUser.nombre, newApodo, newPin })
+        });
+        const result = await response.json();
+        if(result.success) {
+            Toast.fire({ icon: 'success', title: 'Perfil actualizado' });
+            
+            currentUser.apodo = newApodo;
+            localStorage.setItem('truco_user', JSON.stringify(currentUser));
+            
+            document.getElementById('profile-name').innerText = currentUser.apodo ? `${currentUser.nombre} "${currentUser.apodo}"` : currentUser.nombre;
+            document.getElementById('profile-avatar').innerText = getInitials(currentUser.apodo || currentUser.nombre);
+            document.getElementById('profile-pin').value = '';
+            
+            fetchData(); // To refresh leaderboard with new nicknames
+        } else {
+            showAlert('Error', result.message, 'error');
+        }
+    } catch(err) {
+        showAlert('Error', 'No se pudo guardar', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Guardar Cambios';
+    }
+});
+
+// INIT
 document.getElementById('btn-refresh').addEventListener('click', fetchData);
-document.querySelector('[data-target="view-leaderboard"]').classList.add('active');
-fetchData();
+document.querySelector('[data-target="view-leaderboard"]').classList.add('active', 'text-white');
+checkSession();
