@@ -1,4 +1,4 @@
-const API_URL = 'https://script.google.com/macros/s/AKfycbz64Nale12AaW2-9C8RKlNL3uWVdT72QhOtmzhdjlMHvx08ZFjBrv_ZKlKAVs7tLHmC/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxsSyPw8iKAejXlMD3mOXmsV72UPTu3icybX0obd4IZyaWyZPXRjMniOEq3nsrJG7fH/exec';
 
 let appData = {
     players: [],
