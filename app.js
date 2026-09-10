@@ -63,6 +63,12 @@ async function fetchData() {
         const response = await fetch(API_URL);
         const data = await response.json();
         
+        // Si el Apps Script devuelve un error controlado (ej: faltan pestañas)
+        if (data.error) {
+            Swal.fire('Error en el Google Sheet', data.error, 'error');
+            return;
+        }
+
         // Manejo de compatibilidad: si la API vieja devuelve un Array en vez del objeto nuevo
         if (Array.isArray(data)) {
             appData = { players: data, matches: [] };
