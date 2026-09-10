@@ -46,8 +46,6 @@ function switchView(viewName) {
             btn.classList.add('text-slate-400');
         }
     });
-
-    if(viewName === 'leaderboard' || viewName === 'history') fetchData();
 }
 
 // Fetch Data from Google Sheets
@@ -282,8 +280,9 @@ matchForm.addEventListener('submit', async (e) => {
             btnWinA.className = "flex-1 py-4 rounded-2xl font-black text-lg border-2 border-blue-500/50 bg-slate-800 text-blue-400 shadow-md transition-all active:scale-95";
             btnWinB.className = "flex-1 py-4 rounded-2xl font-black text-lg border-2 border-red-500/50 bg-slate-800 text-red-400 shadow-md transition-all active:scale-95";
             
-            // Volver al Historial y recargar
+            // Volver al Historial y recargar en segundo plano
             switchView('history');
+            fetchData();
         } else {
             Swal.fire({ title: 'Error', text: result.message || 'Algo falló en el server', icon: 'error', background: '#1e293b', color: '#f8fafc' });
         }
@@ -321,6 +320,7 @@ playerForm.addEventListener('submit', async (e) => {
             Swal.fire({ title: '¡Adentro!', text: `${name} ya está anotado para jugar.`, icon: 'success', background: '#1e293b', color: '#f8fafc' });
             playerForm.reset();
             switchView('leaderboard');
+            fetchData();
         } else {
             Swal.fire({ title: 'Mmm...', text: result.message || 'Error al agregar', icon: 'warning', background: '#1e293b', color: '#f8fafc' });
         }

@@ -110,7 +110,10 @@ function doPost(e) {
         for (var i = 1; i < data.length; i++) {
           if (data[i][0] === playerName) {
             var row = i + 1;
-            var pts = Number(data[i][1] || 0) + (isWinner ? 3 : 1);
+            
+            // Nuevo sistema de puntos del Tata: 1 punto al ganador, 0 al perdedor
+            var pts = Number(data[i][1] || 0) + (isWinner ? 1 : 0);
+            
             var played = Number(data[i][2] || 0) + 1;
             var wins = Number(data[i][3] || 0) + (isWinner ? 1 : 0);
             var losses = Number(data[i][4] || 0) + (!isWinner ? 1 : 0);
