@@ -746,17 +746,17 @@ window.openTeamBuilder = function() {
     }).join('');
 
     Swal.fire({
-        title: 'Armador Inteligente ??',
-        html: '<p class="text-sm text-slate-400 mb-4">Selecciono a los presentes (4 o 6):</p><div class="flex flex-wrap justify-center mb-4" id="builder-chips-container">' + chipsHtml + '</div><p id="builder-count" class="text-xs font-bold text-brand-400">0 seleccionados</p>',
+        title: 'Armador Inteligente 🎲',
+        html: '<p class="text-sm text-slate-400 mb-4">Seleccioná a los presentes (4 o 6):</p><div class="flex flex-wrap justify-center mb-4" id="builder-chips-container">' + chipsHtml + '</div><p id="builder-count" class="text-xs font-bold text-brand-400">0 seleccionados</p>',
         background: '#0f172a',
         color: '#f8fafc',
         showCancelButton: true,
-        confirmButtonText: 'Armar Parejo!',
+        confirmButtonText: '¡Armar Parejo!',
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#6366f1',
         preConfirm: () => {
             if (builderSelected.size !== 4 && builderSelected.size !== 6) {
-                Swal.showValidationMessage('Tens que seleccionar exactamente 4 o 6 jugadores.');
+                Swal.showValidationMessage('Tenés que seleccionar exactamente 4 o 6 jugadores.');
                 return false;
             }
             return Array.from(builderSelected);
