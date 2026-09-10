@@ -146,7 +146,16 @@
                 </form>
             </div>
             
-            <button id="btn-logout" class="w-full bg-red-500/10 text-red-500 border border-red-500/20 font-bold py-4 rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2">
+            <div id="danger-zone" class="hidden mt-8 mb-6 border-t border-red-500/20 pt-6">
+                <h3 class="text-red-500 font-bold mb-4 text-sm uppercase tracking-widest flex items-center gap-2 px-2">
+                    <i class="ph-bold ph-warning"></i> Zona Peligrosa (Admin)
+                </h3>
+                <button id="btn-end-season" class="w-full bg-[#0b1120] text-red-500 border border-red-500/30 font-bold py-4 rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <i class="ph-bold ph-calendar-x"></i> Finalizar Temporada
+                </button>
+            </div>
+            
+            <button id="btn-logout" class="w-full bg-slate-800/50 text-slate-400 border border-white/5 font-bold py-4 rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2">
                 <i class="ph-bold ph-sign-out"></i> Cerrar Sesión
             </button>
         </section>

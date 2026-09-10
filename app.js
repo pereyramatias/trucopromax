@@ -83,6 +83,12 @@ function checkSession() {
         document.getElementById('profile-avatar').innerText = getInitials(currentUser.apodo || currentUser.nombre);
         document.getElementById('profile-apodo').value = currentUser.apodo || '';
         
+        if (currentUser.nombre.trim().toLowerCase() === 'fideo') {
+            document.getElementById('danger-zone').classList.remove('hidden');
+        } else {
+            document.getElementById('danger-zone').classList.add('hidden');
+        }
+        
         fetchData();
     } else {
         document.getElementById('login-screen').classList.remove('hidden');
@@ -471,6 +477,79 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 document.getElementById('btn-logout').addEventListener('click', () => {
     localStorage.removeItem('truco_user');
     location.reload();
+});
+
+// Check Session
+function checkSession() {
+    const savedUser = localStorage.getItem('truco_user');
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        document.getElementById('login-screen').classList.add('hidden');
+        
+        document.getElementById('profile-name').innerText = currentUser.apodo ? `${currentUser.nombre} "${currentUser.apodo}"` : currentUser.nombre;
+        document.getElementById('profile-avatar').innerText = getInitials(currentUser.apodo || currentUser.nombre);
+        document.getElementById('profile-apodo').value = currentUser.apodo || '';
+        
+        if (currentUser.nombre.trim().toLowerCase() === 'fideo') {
+            document.getElementById('danger-zone').classList.remove('hidden');
+        } else {
+            document.getElementById('danger-zone').classList.add('hidden');
+        }
+        
+        fetchData();
+    } else {
+        document.getElementById('login-screen').classList.remove('hidden');
+    }
+}
+
+// END SEASON
+document.getElementById('btn-end-season').addEventListener('click', async () => {
+    const { value: text } = await Swal.fire({
+        title: '¡CUIDADO!',
+        html: 'Estás por finalizar la temporada actual. Se va a generar una copia de seguridad automática en tu Google Sheets, y luego <b>los puntos y partidos de todos volverán a 0</b>.<br><br>Para confirmar, escribí <b>RESETEAR</b>:',
+        input: 'text',
+        inputPlaceholder: 'RESETEAR',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#334155',
+        confirmButtonText: 'Finalizar Temporada',
+        cancelButtonText: 'Cancelar',
+        background: '#0f172a',
+        color: '#f8fafc',
+        customClass: { popup: 'border border-red-500/30 rounded-3xl' }
+    });
+
+    if (text !== 'RESETEAR') {
+        if (text !== undefined) Swal.fire({ title: 'Cancelado', text: 'La palabra clave no coincide.', icon: 'info', background: '#0f172a', color: '#f8fafc', confirmButtonColor: '#0ea5e9' });
+        return;
+    }
+
+    Swal.fire({
+        title: 'Cerrando Temporada...',
+        text: 'Guardando backups y reiniciando liga.',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+        background: '#0f172a', color: '#f8fafc'
+    });
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST', redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'endSeason', user: currentUser.nombre })
+        });
+        const result = await response.json();
+        
+        if(result.success) {
+            Swal.fire({ title: '¡Nueva Temporada!', text: result.message, icon: 'success', background: '#0f172a', color: '#f8fafc', confirmButtonColor: '#0ea5e9' });
+            fetchData();
+        } else {
+            Swal.fire({ title: 'Error', text: result.message, icon: 'error', background: '#0f172a', color: '#f8fafc', confirmButtonColor: '#0ea5e9' });
+        }
+    } catch(err) {
+        showAlert('Error', 'Problema de red.', 'error');
+    }
 });
 
 // SUBMIT: Update Profile

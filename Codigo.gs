@@ -241,6 +241,40 @@ function doPost(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
+    // End Season Action
+    if (action === 'endSeason') {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyyMMdd_HHmm");
+      
+      // 1. Backup Jugadores
+      var backupJugadores = ss.insertSheet("Jugadores_" + timestamp);
+      var dataJ = sheetJugadores.getDataRange().getValues();
+      if (dataJ.length > 0) backupJugadores.getRange(1, 1, dataJ.length, dataJ[0].length).setValues(dataJ);
+      
+      // 2. Backup Partidos
+      var backupPartidos = ss.insertSheet("Partidos_" + timestamp);
+      var dataP = sheetPartidos.getDataRange().getValues();
+      if (dataP.length > 0) backupPartidos.getRange(1, 1, dataP.length, dataP[0].length).setValues(dataP);
+
+      // 3. Limpiar Partidos (conservar encabezados si los hay)
+      if (sheetPartidos.getLastRow() > 1) {
+        sheetPartidos.getRange(2, 1, sheetPartidos.getLastRow() - 1, sheetPartidos.getLastColumn()).clearContent();
+      }
+
+      // 4. Resetear puntajes en Jugadores (conservar Nombres, Pines y Apodos)
+      var startJ = (dataJ.length > 0 && String(dataJ[0][0]).toLowerCase().includes("nombre")) ? 1 : 0;
+      for (var i = startJ; i < dataJ.length; i++) {
+        var row = i + 1;
+        sheetJugadores.getRange(row, 2).setValue(0); // Puntos
+        sheetJugadores.getRange(row, 3).setValue(0); // Jugados
+        sheetJugadores.getRange(row, 4).setValue(0); // Victorias
+        sheetJugadores.getRange(row, 5).setValue(0); // Derrotas
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({success: true, message: "Temporada finalizada. Se guardaron copias y se reinició la liga a 0."}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
     return ContentService.createTextOutput(JSON.stringify({success: false, message: "Acción inválida"}))
       .setMimeType(ContentService.MimeType.JSON);
 
