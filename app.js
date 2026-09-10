@@ -152,8 +152,8 @@ function renderLeaderboard() {
         const displayName = player.apodo ? `${player.nombre} "${player.apodo}"` : player.nombre;
 
         let streakIcon = '';
-        if (player.streak >= 3) streakIcon = `<span title="Racha: ${player.streak} ganados" class="text-lg drop-shadow-md">🔥</span>`;
-        else if (player.streak <= -3) streakIcon = `<span title="Racha: ${Math.abs(player.streak)} perdidos" class="text-lg drop-shadow-md opacity-70">🧊</span>`;
+        if (player.streak >= 2) streakIcon = `<span title="Racha: ${player.streak} ganados" class="text-lg drop-shadow-md">🔥</span>`;
+        else if (player.streak <= -2) streakIcon = `<span title="Racha: ${Math.abs(player.streak)} perdidos" class="text-lg drop-shadow-md opacity-70">🧊</span>`;
 
         const row = document.createElement('tr');
         row.className = "border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer group";
@@ -711,7 +711,7 @@ window.showPlayerStats = function(playerName) {
             </div>
             <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-white/5">
                 <span class="text-slate-400 font-semibold text-sm">Racha Actual</span>
-                <span class="text-white font-bold">` + (p.streak > 0 ? '+' : '') + p.streak + (p.streak >= 3 ? ' 🔥' : (p.streak <= -3 ? ' 🧊' : '')) + `</span>
+                <span class="text-white font-bold">` + (p.streak > 0 ? '+' : '') + p.streak + (p.streak >= 2 ? ' 🔥' : (p.streak <= -2 ? ' 🧊' : '')) + `</span>
             </div>
             <div class="bg-red-500/10 p-3 rounded-xl border border-red-500/20">
                 <p class="text-red-400 text-xs font-bold uppercase tracking-wider mb-1">Su Papá (Más derrotas contra)</p>
