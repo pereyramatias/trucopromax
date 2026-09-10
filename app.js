@@ -1,5 +1,5 @@
 // TODO: Reemplazar por tu URL de Google Apps Script Web App
-const API_URL = 'https://script.google.com/macros/s/AKfycbxA9_EAGAm7lolYZVRSE8Rx8bySK55Ibez4a-pdUSs7roOd_YhreOt1RXPt1ZqDRo8E/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwc1ZLabVcqgCga8dr9_ylVmD3csN8zrQrGbRUlN68vYnF_mJf0GXDAy9K-JbS7ZQYm/exec';
 
 let appData = { players: [], matches: [] };
 let currentUser = null;
@@ -186,9 +186,12 @@ function renderHistory() {
                 <div class="flex items-center gap-2 text-xs text-slate-400 font-medium">
                     <i class="ph ph-calendar-blank"></i> ${dateStr}
                 </div>
-                <span class="bg-brand-500/10 text-brand-400 border border-brand-500/20 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-inner">
-                    ${teamAArr.length}v${teamBArr.length}
-                </span>
+                <div class="flex items-center gap-3">
+                    ${match.createdBy === currentUser.nombre ? `<button onclick="deleteMatch('${match.id}')" class="text-red-400/50 hover:text-red-400 hover:scale-110 transition-all p-1" title="Eliminar partido"><i class="ph-fill ph-trash text-lg"></i></button>` : ''}
+                    <span class="bg-brand-500/10 text-brand-400 border border-brand-500/20 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-inner">
+                        ${teamAArr.length}v${teamBArr.length}
+                    </span>
+                </div>
             </div>
             
             <div class="flex justify-between items-stretch gap-3">
@@ -230,6 +233,52 @@ function renderHistory() {
         historyContainer.appendChild(card);
     });
 }
+
+window.deleteMatch = async function(matchId) {
+    const confirm = await Swal.fire({
+        title: '¿Borrar partido?',
+        text: 'Se van a restar los puntos de este partido a los jugadores. Esta acción no se puede deshacer.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#334155',
+        confirmButtonText: 'Sí, borrar',
+        cancelButtonText: 'Cancelar',
+        background: '#0f172a',
+        color: '#f8fafc',
+        customClass: { popup: 'border border-white/10 rounded-3xl' }
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    Swal.fire({
+        title: 'Borrando...',
+        text: 'Deshaciendo puntos y eliminando registro.',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+        background: '#0f172a',
+        color: '#f8fafc',
+        customClass: { popup: 'border border-white/10 rounded-3xl' }
+    });
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST', redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'deleteMatch', matchId, user: currentUser.nombre })
+        });
+        const result = await response.json();
+        
+        if(result.success) {
+            Swal.fire({ title: '¡Borrado!', text: result.message, icon: 'success', background: '#0f172a', color: '#f8fafc', confirmButtonColor: '#0ea5e9' });
+            fetchData();
+        } else {
+            Swal.fire({ title: 'Error', text: result.message, icon: 'error', background: '#0f172a', color: '#f8fafc', confirmButtonColor: '#0ea5e9' });
+        }
+    } catch(err) {
+        showAlert('Error', 'Problema de red al intentar borrar.', 'error');
+    }
+};
 
 window.togglePlayerSelection = function(team, playerName) {
     if (team === 'A') {

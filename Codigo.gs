@@ -47,6 +47,7 @@ function doGet(e) {
     if (!fecha) continue;
     
     matches.push({
+      id: String(dataP[j][7] || dataP[j][0]), // Columna H (ID), o usa Fecha si es viejo
       fecha: fecha,
       teamA: String(dataP[j][1] || ""),
       teamB: String(dataP[j][2] || ""),
@@ -141,9 +142,10 @@ function doPost(e) {
       var teamB = body.teamB || [];
       var winner = body.winner;
       var createdBy = body.createdBy || "";
+      var matchId = Utilities.getUuid();
 
-      // Fecha, TeamA, TeamB, PtsA(vacío), PtsB(vacío), Ganador, CreadoPor (Col G)
-      sheetPartidos.appendRow([new Date(), teamA.join(", "), teamB.join(", "), "", "", winner, createdBy]);
+      // Fecha, TeamA, TeamB, PtsA(vacío), PtsB(vacío), Ganador, CreadoPor, MatchID (Col H)
+      sheetPartidos.appendRow([new Date(), teamA.join(", "), teamB.join(", "), "", "", winner, createdBy, matchId]);
 
       var data = sheetJugadores.getDataRange().getValues();
       var startJ = (data.length > 0 && String(data[0][0]).toLowerCase().includes("nombre")) ? 1 : 0;
@@ -170,6 +172,72 @@ function doPost(e) {
       teamB.forEach(function(p) { updatePlayer(p, winner === 'B'); });
 
       return ContentService.createTextOutput(JSON.stringify({success: true, message: "Partido guardado"}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Delete Match Action
+    if (action === 'deleteMatch') {
+      var matchId = body.matchId;
+      var requestingUser = body.user;
+      
+      var dataP = sheetPartidos.getDataRange().getValues();
+      var startP = (dataP.length > 0 && String(dataP[0][0]).toLowerCase().includes("fecha")) ? 1 : 0;
+      var matchFound = false;
+      var teamA = [], teamB = [], winner = "";
+      var rowToDelete = -1;
+      
+      for (var j = startP; j < dataP.length; j++) {
+        var rowId = String(dataP[j][7] || dataP[j][0]).trim();
+        if (rowId === String(matchId).trim()) {
+          // Verify owner
+          if (String(dataP[j][6]).trim() !== String(requestingUser).trim()) {
+            return ContentService.createTextOutput(JSON.stringify({success: false, message: "No podés borrar un partido que cargó otra persona"}))
+              .setMimeType(ContentService.MimeType.JSON);
+          }
+          teamA = String(dataP[j][1]).split(",").map(function(s){return s.trim()});
+          teamB = String(dataP[j][2]).split(",").map(function(s){return s.trim()});
+          winner = String(dataP[j][5]);
+          rowToDelete = j + 1;
+          matchFound = true;
+          break;
+        }
+      }
+      
+      if (!matchFound) {
+        return ContentService.createTextOutput(JSON.stringify({success: false, message: "Partido no encontrado"}))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      // Borrar la fila
+      sheetPartidos.deleteRow(rowToDelete);
+      
+      // Revertir puntos
+      var dataJ = sheetJugadores.getDataRange().getValues();
+      var startJ = (dataJ.length > 0 && String(dataJ[0][0]).toLowerCase().includes("nombre")) ? 1 : 0;
+      
+      function revertPlayer(playerName, isWinner) {
+        for (var i = startJ; i < dataJ.length; i++) {
+          if (String(dataJ[i][0]).trim() === playerName.trim()) {
+            var row = i + 1;
+            // No permitir números negativos
+            var pts = Math.max(0, Number(dataJ[i][1] || 0) - (isWinner ? 1 : 0));
+            var played = Math.max(0, Number(dataJ[i][2] || 0) - 1);
+            var wins = Math.max(0, Number(dataJ[i][3] || 0) - (isWinner ? 1 : 0));
+            var losses = Math.max(0, Number(dataJ[i][4] || 0) - (!isWinner ? 1 : 0));
+            
+            sheetJugadores.getRange(row, 2).setValue(pts);
+            sheetJugadores.getRange(row, 3).setValue(played);
+            sheetJugadores.getRange(row, 4).setValue(wins);
+            sheetJugadores.getRange(row, 5).setValue(losses);
+            break;
+          }
+        }
+      }
+
+      teamA.forEach(function(p) { if(p) revertPlayer(p, winner === 'A'); });
+      teamB.forEach(function(p) { if(p) revertPlayer(p, winner === 'B'); });
+      
+      return ContentService.createTextOutput(JSON.stringify({success: true, message: "Partido eliminado con éxito"}))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
