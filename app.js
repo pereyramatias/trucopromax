@@ -247,20 +247,25 @@ function renderTeamChips() {
     }).join('');
 }
 
+const baseClassA = "py-6 rounded-3xl font-black text-lg border-2 transition-all flex flex-col items-center justify-center gap-2 relative";
+const baseClassB = "py-6 rounded-3xl font-black text-lg border-2 transition-all flex flex-col items-center justify-center gap-2 relative";
+
 btnWinA.addEventListener('click', () => {
     matchWinnerInput.value = 'A';
-    btnWinA.className = "py-5 rounded-2xl font-bold text-sm border-2 border-blue-500 bg-blue-500/20 text-white transition-all scale-[1.02] flex flex-col items-center gap-2 shadow-[0_0_15px_rgba(59,130,246,0.3)]";
-    iconWinA.classList.remove('opacity-0');
-    btnWinB.className = "py-5 rounded-2xl font-bold text-sm border border-red-500/20 bg-red-500/5 text-red-500/50 transition-all flex flex-col items-center gap-2 grayscale";
-    iconWinB.classList.add('opacity-0');
+    btnWinA.className = `${baseClassA} border-blue-400 bg-blue-500/20 text-white scale-[1.05] shadow-[0_0_20px_rgba(59,130,246,0.4)]`;
+    iconWinA.className = "text-5xl drop-shadow-lg transition-all scale-110";
+    
+    btnWinB.className = `${baseClassB} border-red-500/10 bg-red-500/5 text-red-500/50 grayscale opacity-50 active:scale-95`;
+    iconWinB.className = "text-4xl drop-shadow-md transition-all scale-90";
 });
 
 btnWinB.addEventListener('click', () => {
     matchWinnerInput.value = 'B';
-    btnWinB.className = "py-5 rounded-2xl font-bold text-sm border-2 border-red-500 bg-red-500/20 text-white transition-all scale-[1.02] flex flex-col items-center gap-2 shadow-[0_0_15px_rgba(239,68,68,0.3)]";
-    iconWinB.classList.remove('opacity-0');
-    btnWinA.className = "py-5 rounded-2xl font-bold text-sm border border-blue-500/20 bg-blue-500/5 text-blue-500/50 transition-all flex flex-col items-center gap-2 grayscale";
-    iconWinA.classList.add('opacity-0');
+    btnWinB.className = `${baseClassB} border-red-400 bg-red-500/20 text-white scale-[1.05] shadow-[0_0_20px_rgba(239,68,68,0.4)]`;
+    iconWinB.className = "text-5xl drop-shadow-lg transition-all scale-110";
+    
+    btnWinA.className = `${baseClassA} border-blue-500/10 bg-blue-500/5 text-blue-500/50 grayscale opacity-50 active:scale-95`;
+    iconWinA.className = "text-4xl drop-shadow-md transition-all scale-90";
 });
 
 matchForm.addEventListener('submit', async (e) => {
@@ -294,10 +299,11 @@ matchForm.addEventListener('submit', async (e) => {
             renderTeamChips();
             matchWinnerInput.value = '';
             
-            btnWinA.className = "py-5 rounded-2xl font-bold text-sm border border-blue-500/30 bg-blue-500/10 text-blue-400 transition-all flex flex-col items-center gap-2 active:scale-95";
-            iconWinA.classList.add('opacity-0');
-            btnWinB.className = "py-5 rounded-2xl font-bold text-sm border border-red-500/30 bg-red-500/10 text-red-400 transition-all flex flex-col items-center gap-2 active:scale-95";
-            iconWinB.classList.add('opacity-0');
+            // Reset Buttons
+            btnWinA.className = `${baseClassA} border-blue-500/20 bg-blue-500/5 text-blue-500 active:scale-95`;
+            iconWinA.className = "text-4xl drop-shadow-md transition-all";
+            btnWinB.className = `${baseClassB} border-red-500/20 bg-red-500/5 text-red-500 active:scale-95`;
+            iconWinB.className = "text-4xl drop-shadow-md transition-all";
             
             switchView('history');
             fetchData();
