@@ -118,6 +118,8 @@ async function fetchData() {
         if (!appData.players) appData.players = [];
         if (!appData.matches) appData.matches = [];
 
+        enrichPlayerData();
+
         renderLeaderboard();
         renderHistory();
         renderTeamChips();
@@ -149,16 +151,24 @@ function renderLeaderboard() {
 
         const displayName = player.apodo ? `${player.nombre} "${player.apodo}"` : player.nombre;
 
+        let streakIcon = '';
+        if (player.streak >= 3) streakIcon = `<span title="Racha: ${player.streak} ganados" class="text-lg drop-shadow-md">🔥</span>`;
+        else if (player.streak <= -3) streakIcon = `<span title="Racha: ${Math.abs(player.streak)} perdidos" class="text-lg drop-shadow-md opacity-70">🧊</span>`;
+
         const row = document.createElement('tr');
-        row.className = "border-b border-white/5 hover:bg-white/[0.02] transition-colors";
+        row.className = "border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer group";
+        row.setAttribute('onclick', `showPlayerStats('${player.nombre}')`);
         row.innerHTML = `
             <td class="py-4 pl-5">${badge}</td>
             <td class="py-4">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-full bg-brand-500/10 text-brand-400 flex items-center justify-center text-xs font-bold border border-brand-500/20">
+                    <div class="w-9 h-9 rounded-full bg-brand-500/10 text-brand-400 flex items-center justify-center text-xs font-bold border border-brand-500/20 group-hover:scale-110 transition-transform">
                         ${getInitials(player.apodo || player.nombre)}
                     </div>
-                    <span class="font-semibold text-white">${displayName}</span>
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold text-white">${displayName}</span>
+                        ${streakIcon}
+                    </div>
                 </div>
             </td>
             <td class="py-4 text-center font-bold text-brand-400 text-lg">${player.puntos}</td>
@@ -611,3 +621,209 @@ document.getElementById('profile-form').addEventListener('submit', async (e) => 
 document.getElementById('btn-refresh').addEventListener('click', fetchData);
 document.querySelector('[data-target="view-leaderboard"]').classList.add('active', 'text-white');
 checkSession();
+
+// --- NUEVAS FUNCIONES: Rachas, Paternidades y Armador ---
+
+function enrichPlayerData() {
+    appData.players.forEach(p => {
+        p.streak = 0;
+        p.winsAgainst = {};
+        p.lossesAgainst = {};
+        p.papa = null;
+        p.hijo = null;
+    });
+
+    const playerMap = {};
+    appData.players.forEach(p => playerMap[p.nombre] = p);
+
+    const sortedMatches = [...appData.matches].reverse(); // del mos nuevo al mos viejo
+    
+    appData.players.forEach(p => {
+        let currentStreak = 0;
+        let countingWins = null; 
+        for (let match of sortedMatches) {
+            const teamA = match.teamA ? match.teamA.split(',').map(s=>s.trim()) : [];
+            const teamB = match.teamB ? match.teamB.split(',').map(s=>s.trim()) : [];
+            
+            let won = null;
+            if (teamA.includes(p.nombre)) won = (match.winner === 'A');
+            else if (teamB.includes(p.nombre)) won = (match.winner === 'B');
+            
+            if (won !== null) {
+                if (countingWins === null) {
+                    countingWins = won;
+                    currentStreak = won ? 1 : -1;
+                } else {
+                    if (countingWins === won) {
+                        currentStreak += won ? 1 : -1;
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+        p.streak = currentStreak;
+    });
+
+    appData.matches.forEach(match => {
+        const teamA = match.teamA ? match.teamA.split(',').map(s=>s.trim()) : [];
+        const teamB = match.teamB ? match.teamB.split(',').map(s=>s.trim()) : [];
+        
+        teamA.forEach(a => {
+            const pA = playerMap[a];
+            if (!pA) return;
+            teamB.forEach(b => {
+                const pB = playerMap[b];
+                if (!pB) return;
+                
+                if (match.winner === 'A') {
+                    pA.winsAgainst[b] = (pA.winsAgainst[b] || 0) + 1;
+                    pB.lossesAgainst[a] = (pB.lossesAgainst[a] || 0) + 1;
+                } else if (match.winner === 'B') {
+                    pA.lossesAgainst[b] = (pA.lossesAgainst[b] || 0) + 1;
+                    pB.winsAgainst[a] = (pB.winsAgainst[a] || 0) + 1;
+                }
+            });
+        });
+    });
+
+    appData.players.forEach(p => {
+        let maxWins = 0;
+        for (let op in p.winsAgainst) {
+            if (p.winsAgainst[op] > maxWins) { maxWins = p.winsAgainst[op]; p.hijo = op; }
+        }
+        let maxLosses = 0;
+        for (let op in p.lossesAgainst) {
+            if (p.lossesAgainst[op] > maxLosses) { maxLosses = p.lossesAgainst[op]; p.papa = op; }
+        }
+    });
+}
+
+window.showPlayerStats = function(playerName) {
+    const p = appData.players.find(x => x.nombre === playerName);
+    if (!p) return;
+    
+    let statsHtml = `
+        <div class="text-left space-y-4 mt-4">
+            <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-white/5">
+                <span class="text-slate-400 font-semibold text-sm">Winrate (Efectividad)</span>
+                <span class="text-brand-400 font-black text-lg">` + p.winrate + `%</span>
+            </div>
+            <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-white/5">
+                <span class="text-slate-400 font-semibold text-sm">Racha Actual</span>
+                <span class="text-white font-bold">` + (p.streak > 0 ? '+' : '') + p.streak + (p.streak >= 3 ? ' 🔥' : (p.streak <= -3 ? ' 🧊' : '')) + `</span>
+            </div>
+            <div class="bg-red-500/10 p-3 rounded-xl border border-red-500/20">
+                <p class="text-red-400 text-xs font-bold uppercase tracking-wider mb-1">Su Papá (Más derrotas contra)</p>
+                <p class="text-white font-semibold">` + (p.papa ? p.papa + ' (' + p.lossesAgainst[p.papa] + ' veces)' : 'Nadie todavía') + `</p>
+            </div>
+            <div class="bg-blue-500/10 p-3 rounded-xl border border-blue-500/20">
+                <p class="text-blue-400 text-xs font-bold uppercase tracking-wider mb-1">De Hijo (Más victorias contra)</p>
+                <p class="text-white font-semibold">` + (p.hijo ? p.hijo + ' (' + p.winsAgainst[p.hijo] + ' veces)' : 'Nadie todavía') + `</p>
+            </div>
+        </div>
+    `;
+
+    Swal.fire({
+        title: p.apodo ? p.nombre + ' "' + p.apodo + '"' : p.nombre,
+        html: statsHtml,
+        background: '#0f172a',
+        color: '#f8fafc',
+        showConfirmButton: false,
+        showCloseButton: true,
+        customClass: { popup: 'border border-white/10 rounded-3xl' }
+    });
+}
+
+let builderSelected = new Set();
+
+window.openTeamBuilder = function() {
+    builderSelected.clear();
+    const sorted = [...appData.players].sort((a, b) => a.nombre.localeCompare(b.nombre));
+    
+    let chipsHtml = sorted.map(p => {
+        return '<button type="button" id="bchip-'+p.nombre+'" onclick="toggleBuilderChip(\''+p.nombre+'\')" class="m-1 px-3 py-1.5 rounded-full text-[13px] font-semibold transition-all border bg-slate-800 text-slate-300 border-white/10">' + p.nombre + '</button>';
+    }).join('');
+
+    Swal.fire({
+        title: 'Armador Inteligente ??',
+        html: '<p class="text-sm text-slate-400 mb-4">Selecciono a los presentes (4 o 6):</p><div class="flex flex-wrap justify-center mb-4" id="builder-chips-container">' + chipsHtml + '</div><p id="builder-count" class="text-xs font-bold text-brand-400">0 seleccionados</p>',
+        background: '#0f172a',
+        color: '#f8fafc',
+        showCancelButton: true,
+        confirmButtonText: 'Armar Parejo!',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#6366f1',
+        preConfirm: () => {
+            if (builderSelected.size !== 4 && builderSelected.size !== 6) {
+                Swal.showValidationMessage('Tens que seleccionar exactamente 4 o 6 jugadores.');
+                return false;
+            }
+            return Array.from(builderSelected);
+        },
+        customClass: { popup: 'border border-indigo-500/30 rounded-3xl' }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            generateBalancedTeams(result.value);
+        }
+    });
+}
+
+window.toggleBuilderChip = function(name) {
+    const btn = document.getElementById('bchip-' + name);
+    if (builderSelected.has(name)) {
+        builderSelected.delete(name);
+        btn.className = "m-1 px-3 py-1.5 rounded-full text-[13px] font-semibold transition-all border bg-slate-800 text-slate-300 border-white/10";
+    } else {
+        builderSelected.add(name);
+        btn.className = "m-1 px-3 py-1.5 rounded-full text-[13px] font-semibold transition-all border bg-indigo-500 text-white border-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.5)]";
+    }
+    document.getElementById('builder-count').innerText = builderSelected.size + ' seleccionados';
+}
+
+function generateBalancedTeams(playersArr) {
+    const ps = playersArr.map(name => appData.players.find(x => x.nombre === name));
+    const teamSize = ps.length / 2;
+    const combinations = getCombinations(ps, teamSize);
+    
+    let bestDiff = Infinity;
+    let bestTeamA = [];
+    let bestTeamB = [];
+    
+    combinations.forEach(teamA => {
+        const teamB = ps.filter(x => !teamA.includes(x));
+        const winrateA = teamA.reduce((sum, x) => sum + x.winrate, 0);
+        const winrateB = teamB.reduce((sum, x) => sum + x.winrate, 0);
+        const diff = Math.abs(winrateA - winrateB);
+        
+        if (diff < bestDiff) {
+            bestDiff = diff;
+            bestTeamA = teamA;
+            bestTeamB = teamB;
+        }
+    });
+    
+    selectedTeamA.clear();
+    selectedTeamB.clear();
+    bestTeamA.forEach(p => selectedTeamA.add(p.nombre));
+    bestTeamB.forEach(p => selectedTeamB.add(p.nombre));
+    renderTeamChips();
+    Toast.fire({ icon: 'success', title: 'Equipos equilibrados generados!' });
+}
+
+function getCombinations(array, size) {
+    const result = [];
+    function backtrack(start, combo) {
+        if (combo.length === size) {
+            result.push([...combo]);
+            return;
+        }
+        for (let i = start; i < array.length; i++) {
+            combo.push(array[i]);
+            backtrack(i + 1, combo);
+            combo.pop();
+        }
+    }
+    backtrack(0, []);
+    return result;
+}
