@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Liga de Truco 🥩🃏</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            background-color: #111827;
+            color: #f3f4f6;
+        }
+        .arg-accent {
+            color: #75AADB;
+        }
+        .bg-arg-accent {
+            background-color: #75AADB;
+        }
+        ::-webkit-scrollbar {
+            display: none;
+        }
+        select[multiple] {
+            height: 120px;
+        }
+    </style>
+</head>
+<body class="pb-24 font-sans antialiased">
+    
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-gray-700 p-4 sticky top-0 z-10 flex justify-center items-center shadow-md">
+        <h1 class="text-2xl font-bold arg-accent tracking-wider uppercase">Liga de Truco <span class="text-white">🥩🃏</span></h1>
+    </header>
+
+    <!-- Main Content -->
+    <main class="p-4 max-w-lg mx-auto">
+        <!-- View: Leaderboard -->
+        <section id="view-leaderboard" class="view-section">
+            <h2 class="text-xl font-bold mb-4 flex items-center justify-between">
+                <span>Tabla de Posiciones 🏆</span>
+                <button id="btn-refresh" class="text-gray-400 hover:text-white p-2 bg-gray-700 rounded-full w-10 h-10 flex items-center justify-center transition-colors">↻</button>
+            </h2>
+            
+            <div id="loading-leaderboard" class="text-center py-10 text-gray-400">
+                <div class="animate-spin inline-block w-8 h-8 border-[3px] border-current border-t-transparent text-blue-400 rounded-full" role="status" aria-label="loading"></div>
+                <p class="mt-2">Barajando y dando de nuevo...</p>
+            </div>
+
+            <div class="bg-gray-800 rounded-xl overflow-hidden shadow-lg border border-gray-700 hidden" id="table-container">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-900 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-700">
+                            <th class="p-3 text-center w-10">#</th>
+                            <th class="p-3">Jugador</th>
+                            <th class="p-3 text-center">Pts</th>
+                            <th class="p-3 text-center text-[10px]">PJ</th>
+                            <th class="p-3 text-center text-[10px]">% Win</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body" class="text-sm">
+                        <!-- Filas inyectadas por JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- View: History -->
+        <section id="view-history" class="view-section hidden">
+            <h2 class="text-xl font-bold mb-4">Historial de Partidos 📜</h2>
+            <div id="history-container" class="space-y-4">
+                <!-- Tarjetas inyectadas por JS -->
+            </div>
+        </section>
+
+        <!-- View: Match -->
+        <section id="view-match" class="view-section hidden">
+            <h2 class="text-xl font-bold mb-4">Registrar Partido ✍️</h2>
+            
+            <div class="bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-700 mb-6">
+                <form id="match-form">
+                    
+                    <!-- Equipo A -->
+                    <div class="mb-5">
+                        <label class="block text-sm font-medium mb-2 text-blue-300">Equipo A (Azul)</label>
+                        <select id="team-a" multiple class="w-full bg-gray-900 border border-gray-600 rounded-lg p-2 text-white focus:outline-none focus:border-blue-400 text-base">
+                            <!-- Opciones -->
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">En el celu, tocá varios para seleccionar.</p>
+                    </div>
+
+                    <div class="flex justify-center items-center my-2 text-gray-500 font-bold text-xl">
+                        VS
+                    </div>
+
+                    <!-- Equipo B -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium mb-2 text-red-300">Equipo B (Rojo)</label>
+                        <select id="team-b" multiple class="w-full bg-gray-900 border border-gray-600 rounded-lg p-2 text-white focus:outline-none focus:border-red-400 text-base">
+                            <!-- Opciones -->
+                        </select>
+                    </div>
+
+                    <!-- Puntos (Opcional) -->
+                    <div class="mb-6 flex gap-4">
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium mb-2 text-gray-400 text-center">Puntos A <span class="text-[10px] block">(Opcional)</span></label>
+                            <input type="number" id="points-a" class="w-full bg-gray-900 border border-gray-600 rounded-lg p-2 text-white text-center focus:outline-none focus:border-blue-400" placeholder="0" min="0" max="30">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium mb-2 text-gray-400 text-center">Puntos B <span class="text-[10px] block">(Opcional)</span></label>
+                            <input type="number" id="points-b" class="w-full bg-gray-900 border border-gray-600 rounded-lg p-2 text-white text-center focus:outline-none focus:border-red-400" placeholder="0" min="0" max="30">
+                        </div>
+                    </div>
+
+                    <!-- Ganador -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium mb-3 text-gray-300 text-center">¿Quién ganó? 👑</label>
+                        <div class="flex gap-4">
+                            <button type="button" id="btn-win-a" class="flex-1 py-3 rounded-lg font-bold border-2 border-blue-500 bg-gray-900 text-blue-400 transition-colors">Equipo A</button>
+                            <button type="button" id="btn-win-b" class="flex-1 py-3 rounded-lg font-bold border-2 border-red-500 bg-gray-900 text-red-400 transition-colors">Equipo B</button>
+                        </div>
+                        <input type="hidden" id="match-winner" value="">
+                    </div>
+
+                    <button type="submit" id="btn-save-match" class="w-full bg-arg-accent text-gray-900 font-bold text-lg py-4 rounded-xl shadow-md disabled:opacity-50">
+                        Guardar Resultado 🚀
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- View: New Player -->
+        <section id="view-player" class="view-section hidden">
+            <h2 class="text-xl font-bold mb-4">Nuevo Jugador 👤</h2>
+            
+            <div class="bg-gray-800 p-5 rounded-xl shadow-lg border border-gray-700">
+                <form id="player-form">
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium mb-2 text-gray-300">Nombre del pibe/piba</label>
+                        <input type="text" id="new-player-name" class="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-arg-accent text-lg" placeholder="Ej: El Dibu" autocomplete="off" required>
+                    </div>
+                    
+                    <button type="submit" id="btn-save-player" class="w-full bg-green-500 text-white font-bold text-lg py-4 rounded-xl shadow-md disabled:opacity-50">
+                        Sumar al Asado 🍷
+                    </button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 w-full bg-gray-900 border-t border-gray-700 flex justify-around p-2 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.3)]">
+        <button onclick="switchView('leaderboard')" class="nav-btn flex flex-col items-center p-2 text-gray-500 hover:text-white flex-1 transition-colors" data-target="view-leaderboard">
+            <span class="text-2xl mb-1">🏆</span>
+            <span class="text-[10px] font-semibold">Ranking</span>
+        </button>
+        <button onclick="switchView('history')" class="nav-btn flex flex-col items-center p-2 text-gray-500 hover:text-white flex-1 transition-colors" data-target="view-history">
+            <span class="text-2xl mb-1">📜</span>
+            <span class="text-[10px] font-semibold">Historial</span>
+        </button>
+        <button onclick="switchView('match')" class="nav-btn flex flex-col items-center p-2 text-gray-500 hover:text-white flex-1 relative -top-4 transition-colors" data-target="view-match">
+            <div class="bg-arg-accent rounded-full p-3 shadow-lg text-gray-900 flex items-center justify-center w-14 h-14 border-4 border-gray-900">
+                <span class="text-xl">⚔️</span>
+            </div>
+        </button>
+        <button onclick="switchView('player')" class="nav-btn flex flex-col items-center p-2 text-gray-500 hover:text-white flex-1 transition-colors" data-target="view-player">
+            <span class="text-2xl mb-1">👤</span>
+            <span class="text-[10px] font-semibold">Nuevo</span>
+        </button>
+    </nav>
+
+    <script src="app.js"></script>
+</body>
+</html>
