@@ -1,4 +1,3 @@
-// TODO: Reemplazar por tu URL de Google Apps Script Web App
 const API_URL = 'https://script.google.com/macros/s/AKfycbz64Nale12AaW2-9C8RKlNL3uWVdT72QhOtmzhdjlMHvx08ZFjBrv_ZKlKAVs7tLHmC/exec';
 
 let appData = {
@@ -40,9 +39,11 @@ function switchView(viewName) {
     // Deseleccionar botones del nav
     document.querySelectorAll('.nav-btn').forEach(btn => {
         if(btn.dataset.target === `view-${viewName}`) {
-            btn.classList.replace('text-gray-500', 'text-white');
+            btn.classList.add('text-sky-300');
+            btn.classList.remove('text-slate-400');
         } else {
-            btn.classList.replace('text-white', 'text-gray-500');
+            btn.classList.remove('text-sky-300');
+            btn.classList.add('text-slate-400');
         }
     });
 
@@ -52,7 +53,13 @@ function switchView(viewName) {
 // Fetch Data from Google Sheets
 async function fetchData() {
     if(!API_URL || API_URL === 'PEGÁ_TU_LINK_DE_APPS_SCRIPT_ACÁ') {
-        Swal.fire('Falta configuración', 'Pegá la URL de tu Apps Script en el archivo app.js (constante API_URL).', 'info');
+        Swal.fire({
+            title: 'Falta configuración',
+            text: 'Pegá la URL de tu Apps Script en el archivo app.js (constante API_URL).',
+            icon: 'info',
+            background: '#1e293b',
+            color: '#f8fafc'
+        });
         return;
     }
 
@@ -65,7 +72,13 @@ async function fetchData() {
         
         // Si el Apps Script devuelve un error controlado (ej: faltan pestañas)
         if (data.error) {
-            Swal.fire('Error en el Google Sheet', data.error, 'error');
+            Swal.fire({
+                title: 'Error en el Google Sheet',
+                text: data.error,
+                icon: 'error',
+                background: '#1e293b',
+                color: '#f8fafc'
+            });
             return;
         }
 
@@ -85,10 +98,21 @@ async function fetchData() {
         updateSelects();
     } catch (error) {
         console.error(error);
-        Swal.fire('Error', 'No se pudieron cargar los datos de la liga.', 'error');
+        Swal.fire({
+            title: 'Error',
+            text: 'No se pudieron cargar los datos de la liga.',
+            icon: 'error',
+            background: '#1e293b',
+            color: '#f8fafc'
+        });
     } finally {
         loadingLeaderboard.classList.add('hidden');
-        tableContainer.classList.remove('hidden');
+        if (appData.players.length > 0) {
+            tableContainer.classList.remove('hidden');
+        } else {
+            loadingLeaderboard.innerHTML = '<p class="text-slate-400 py-8">Todavía no hay jugadores cargados.</p>';
+            loadingLeaderboard.classList.remove('hidden');
+        }
     }
 }
 
@@ -100,16 +124,16 @@ function renderLeaderboard() {
         if (index === 0) medal = '🥇';
         else if (index === 1) medal = '🥈';
         else if (index === 2) medal = '🥉';
-        else medal = `<span class="text-gray-500">${index + 1}</span>`;
+        else medal = `<span class="text-slate-500 font-medium">${index + 1}</span>`;
 
         const row = document.createElement('tr');
-        row.className = "border-b border-gray-700 hover:bg-gray-700 transition-colors";
+        row.className = "border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors";
         row.innerHTML = `
-            <td class="p-3 text-center font-bold text-lg">${medal}</td>
-            <td class="p-3 font-semibold text-white">${player.nombre}</td>
-            <td class="p-3 text-center font-bold text-arg-accent text-lg">${player.puntos}</td>
-            <td class="p-3 text-center text-gray-400">${player.jugados}</td>
-            <td class="p-3 text-center text-gray-400">${player.winrate}%</td>
+            <td class="p-4 text-center text-xl drop-shadow-md">${medal}</td>
+            <td class="p-4 font-bold text-white tracking-wide">${player.nombre}</td>
+            <td class="p-4 text-center font-black text-sky-400 text-xl">${player.puntos}</td>
+            <td class="p-4 text-center text-slate-400 font-medium">${player.jugados}</td>
+            <td class="p-4 text-center text-slate-400 font-medium">${player.winrate}%</td>
         `;
         leaderboardBody.appendChild(row);
     });
@@ -120,7 +144,7 @@ function renderHistory() {
     historyContainer.innerHTML = '';
     
     if (!appData.matches || appData.matches.length === 0) {
-        historyContainer.innerHTML = '<p class="text-gray-500 text-center py-8">Aún no hay partidos jugados. ¡Armá el primer equipo!</p>';
+        historyContainer.innerHTML = '<div class="glass-card p-8 rounded-2xl text-center"><p class="text-slate-400 text-lg">Aún no hay partidos jugados. ¡Armá el primer equipo!</p></div>';
         return;
     }
 
@@ -143,35 +167,35 @@ function renderHistory() {
         const dateStr = new Date(match.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 
         const card = document.createElement('div');
-        card.className = "bg-gray-800 rounded-xl p-4 shadow-lg border border-gray-700 relative overflow-hidden";
+        card.className = "glass-card rounded-3xl p-5 shadow-lg border-l-4 border-l-sky-500 relative overflow-hidden transition-all hover:scale-[1.01]";
         
         card.innerHTML = `
-            <div class="flex justify-between items-center mb-3">
-                <span class="text-xs text-gray-400">📅 ${dateStr}</span>
-                <span class="bg-gray-700 text-arg-accent text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">${badgeType}</span>
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-xs text-slate-400 font-medium tracking-wide">📅 ${dateStr}</span>
+                <span class="bg-slate-800/80 text-sky-300 text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-inner">${badgeType}</span>
             </div>
             
-            <div class="flex justify-between items-stretch gap-2">
+            <div class="flex justify-between items-stretch gap-3">
                 <!-- Team A -->
-                <div class="flex-1 flex flex-col justify-between text-center p-2 rounded-lg ${isWinA ? 'bg-blue-900/40 border border-blue-500/50' : 'bg-gray-900/50 border border-transparent'}">
-                    <div class="text-blue-400 font-bold mb-2 ${isWinA ? 'text-xl' : 'text-md'}">
+                <div class="flex-1 flex flex-col justify-between text-center p-3 rounded-2xl ${isWinA ? 'bg-gradient-to-b from-blue-900/40 to-blue-800/20 border border-blue-500/40 shadow-[0_0_15px_rgba(59,130,246,0.15)]' : 'bg-slate-800/40 border border-transparent'}">
+                    <div class="text-blue-400 font-black mb-3 drop-shadow-sm ${isWinA ? 'text-2xl' : 'text-lg'}">
                         ${match.ptsA !== "" && match.ptsA !== undefined ? match.ptsA : (isWinA ? '🏆' : '-')}
                     </div>
-                    <div class="text-[11px] text-gray-300 flex flex-col gap-1 mt-auto">
+                    <div class="text-[12px] font-medium text-slate-300 flex flex-col gap-1.5 mt-auto">
                         ${teamAArr.map(p => `<span>${p}</span>`).join('')}
                     </div>
                 </div>
 
                 <div class="flex items-center justify-center px-1">
-                    <span class="text-gray-600 font-black italic text-xs">VS</span>
+                    <span class="bg-slate-800 text-slate-400 font-black italic text-xs px-2 py-1 rounded-full shadow-inner">VS</span>
                 </div>
 
                 <!-- Team B -->
-                <div class="flex-1 flex flex-col justify-between text-center p-2 rounded-lg ${isWinB ? 'bg-red-900/40 border border-red-500/50' : 'bg-gray-900/50 border border-transparent'}">
-                    <div class="text-red-400 font-bold mb-2 ${isWinB ? 'text-xl' : 'text-md'}">
+                <div class="flex-1 flex flex-col justify-between text-center p-3 rounded-2xl ${isWinB ? 'bg-gradient-to-b from-red-900/40 to-red-800/20 border border-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.15)]' : 'bg-slate-800/40 border border-transparent'}">
+                    <div class="text-red-400 font-black mb-3 drop-shadow-sm ${isWinB ? 'text-2xl' : 'text-lg'}">
                         ${match.ptsB !== "" && match.ptsB !== undefined ? match.ptsB : (isWinB ? '🏆' : '-')}
                     </div>
-                    <div class="text-[11px] text-gray-300 flex flex-col gap-1 mt-auto">
+                    <div class="text-[12px] font-medium text-slate-300 flex flex-col gap-1.5 mt-auto">
                         ${teamBArr.map(p => `<span>${p}</span>`).join('')}
                     </div>
                 </div>
@@ -192,18 +216,24 @@ function updateSelects() {
 // Winner Selection UI Toggle
 btnWinA.addEventListener('click', () => {
     matchWinnerInput.value = 'A';
-    btnWinA.classList.replace('bg-gray-900', 'bg-blue-600');
+    btnWinA.classList.replace('bg-slate-800', 'bg-blue-600');
     btnWinA.classList.replace('text-blue-400', 'text-white');
-    btnWinB.classList.replace('bg-red-600', 'bg-gray-900');
+    btnWinA.classList.replace('border-blue-500/50', 'border-blue-400');
+    
+    btnWinB.classList.replace('bg-red-600', 'bg-slate-800');
     btnWinB.classList.replace('text-white', 'text-red-400');
+    btnWinB.classList.replace('border-red-400', 'border-red-500/50');
 });
 
 btnWinB.addEventListener('click', () => {
     matchWinnerInput.value = 'B';
-    btnWinB.classList.replace('bg-gray-900', 'bg-red-600');
+    btnWinB.classList.replace('bg-slate-800', 'bg-red-600');
     btnWinB.classList.replace('text-red-400', 'text-white');
-    btnWinA.classList.replace('bg-blue-600', 'bg-gray-900');
+    btnWinB.classList.replace('border-red-500/50', 'border-red-400');
+    
+    btnWinA.classList.replace('bg-blue-600', 'bg-slate-800');
     btnWinA.classList.replace('text-white', 'text-blue-400');
+    btnWinA.classList.replace('border-blue-400', 'border-blue-500/50');
 });
 
 // Save Match Submit
@@ -217,20 +247,20 @@ matchForm.addEventListener('submit', async (e) => {
     const winner = matchWinnerInput.value;
 
     if (teamA.length === 0 || teamB.length === 0) {
-        return Swal.fire('Epa', 'Tenés que elegir los jugadores de ambos equipos.', 'warning');
+        return Swal.fire({ title: 'Epa', text: 'Tenés que elegir los jugadores de ambos equipos.', icon: 'warning', background: '#1e293b', color: '#f8fafc' });
     }
 
     const intersect = teamA.filter(value => teamB.includes(value));
     if (intersect.length > 0) {
-        return Swal.fire('Che!', 'Hay jugadores que están en los dos equipos a la vez.', 'error');
+        return Swal.fire({ title: 'Che!', text: 'Hay jugadores que están en los dos equipos a la vez.', icon: 'error', background: '#1e293b', color: '#f8fafc' });
     }
 
     if (!winner) {
-        return Swal.fire('Falta algo', 'Elegí qué equipo ganó el partido.', 'warning');
+        return Swal.fire({ title: 'Falta algo', text: 'Elegí qué equipo ganó el partido.', icon: 'warning', background: '#1e293b', color: '#f8fafc' });
     }
 
     btnSaveMatch.disabled = true;
-    btnSaveMatch.innerHTML = 'Guardando...';
+    btnSaveMatch.innerHTML = 'Guardando... <span class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full ml-2"></span>';
 
     try {
         const response = await fetch(API_URL, {
@@ -242,22 +272,24 @@ matchForm.addEventListener('submit', async (e) => {
         
         const result = await response.json();
         if(result.success) {
-            Swal.fire('¡Cantado!', 'El partido se guardó de 10.', 'success');
+            Swal.fire({ title: '¡Cantado!', text: 'El partido se guardó de 10.', icon: 'success', background: '#1e293b', color: '#f8fafc' });
             matchForm.reset();
             matchWinnerInput.value = '';
-            btnWinA.className = "flex-1 py-3 rounded-lg font-bold border-2 border-blue-500 bg-gray-900 text-blue-400 transition-colors";
-            btnWinB.className = "flex-1 py-3 rounded-lg font-bold border-2 border-red-500 bg-gray-900 text-red-400 transition-colors";
+            
+            // Reset winner buttons UI
+            btnWinA.className = "flex-1 py-4 rounded-2xl font-black text-lg border-2 border-blue-500/50 bg-slate-800 text-blue-400 shadow-md transition-all active:scale-95";
+            btnWinB.className = "flex-1 py-4 rounded-2xl font-black text-lg border-2 border-red-500/50 bg-slate-800 text-red-400 shadow-md transition-all active:scale-95";
             
             // Volver al Historial y recargar
             switchView('history');
         } else {
-            Swal.fire('Error', result.message || 'Algo falló en el server', 'error');
+            Swal.fire({ title: 'Error', text: result.message || 'Algo falló en el server', icon: 'error', background: '#1e293b', color: '#f8fafc' });
         }
     } catch (error) {
-        Swal.fire('Error', 'No se pudo conectar con la base de datos.', 'error');
+        Swal.fire({ title: 'Error', text: 'No se pudo conectar con la base de datos.', icon: 'error', background: '#1e293b', color: '#f8fafc' });
     } finally {
         btnSaveMatch.disabled = false;
-        btnSaveMatch.innerHTML = 'Guardar Resultado 🚀';
+        btnSaveMatch.innerHTML = 'GUARDAR RESULTADO 🚀';
     }
 });
 
@@ -269,9 +301,10 @@ playerForm.addEventListener('submit', async (e) => {
     if (!name) return;
 
     btnSavePlayer.disabled = true;
-    btnSavePlayer.innerHTML = 'Agregando...';
+    btnSavePlayer.innerHTML = 'Agregando... <span class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full ml-2"></span>';
 
     try {
+        // Enviar POST request. Si el backend falla, caerá al catch.
         const response = await fetch(API_URL, {
             method: 'POST',
             redirect: 'follow',
@@ -279,19 +312,29 @@ playerForm.addEventListener('submit', async (e) => {
             body: JSON.stringify({ action: 'addPlayer', name })
         });
         
+        // Si el payload devuelto no es JSON válido, esto lanzará error y pasará al catch.
         const result = await response.json();
+        
         if(result.success) {
-            Swal.fire('¡Adentro!', `${name} ya está anotado para jugar.`, 'success');
+            Swal.fire({ title: '¡Adentro!', text: `${name} ya está anotado para jugar.`, icon: 'success', background: '#1e293b', color: '#f8fafc' });
             playerForm.reset();
             switchView('leaderboard');
         } else {
-            Swal.fire('Mmm...', result.message || 'Error al agregar', 'warning');
+            Swal.fire({ title: 'Mmm...', text: result.message || 'Error al agregar', icon: 'warning', background: '#1e293b', color: '#f8fafc' });
         }
     } catch (error) {
-        Swal.fire('Error', 'No se pudo conectar para guardar el jugador.', 'error');
+        console.error("Error detallado:", error);
+        Swal.fire({ 
+            title: 'Ups...', 
+            text: 'Ocurrió un error al guardar. Intentá refrescar la página. Si el jugador se guardó en la planilla igual, puede ser un error de conexión (CORS) normal.', 
+            icon: 'error', 
+            background: '#1e293b', 
+            color: '#f8fafc' 
+        });
     } finally {
+        // Asegurarnos de habilitar el botón siempre
         btnSavePlayer.disabled = false;
-        btnSavePlayer.innerHTML = 'Sumar al Asado 🍷';
+        btnSavePlayer.innerHTML = 'SUMAR AL ASADO 🍷';
     }
 });
 
@@ -299,5 +342,6 @@ playerForm.addEventListener('submit', async (e) => {
 document.getElementById('btn-refresh').addEventListener('click', fetchData);
 
 // Iniciar cargando la tabla y asegurando estado inicial de botones
-document.querySelector('[data-target="view-leaderboard"]').classList.replace('text-gray-500', 'text-white');
+document.querySelector('[data-target="view-leaderboard"]').classList.add('text-sky-300');
+document.querySelector('[data-target="view-leaderboard"]').classList.remove('text-slate-400');
 fetchData();
