@@ -67,7 +67,9 @@ async function fetchData() {
     tableContainer.classList.add('hidden');
 
     try {
-        const response = await fetch(API_URL);
+        const timestamp = new Date().getTime();
+        const urlWithCacheBuster = API_URL + (API_URL.includes('?') ? '&' : '?') + 't=' + timestamp;
+        const response = await fetch(urlWithCacheBuster);
         const data = await response.json();
         
         // Si el Apps Script devuelve un error controlado (ej: faltan pestañas)
