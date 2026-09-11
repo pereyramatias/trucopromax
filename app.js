@@ -840,29 +840,48 @@ function renderCounter() {
 }
 
 window.addScore = function(team, points) {
+    let crossedThreshold = false;
     if (team === 'A') {
+        let oldScore = scoreA;
         scoreA += points;
         if (scoreA < 0) scoreA = 0;
+        if (scoreA > 30) scoreA = 30;
         localStorage.setItem('truco_scoreA', scoreA);
+        if (scoreA === 30 && oldScore < 30) crossedThreshold = true;
     } else {
+        let oldScore = scoreB;
         scoreB += points;
         if (scoreB < 0) scoreB = 0;
+        if (scoreB > 30) scoreB = 30;
         localStorage.setItem('truco_scoreB', scoreB);
+        if (scoreB === 30 && oldScore < 30) crossedThreshold = true;
     }
     renderCounter();
 
-    if (scoreA >= 30 || scoreB >= 30) {
-        let winnerName = scoreA >= 30 ? 'AZUL' : 'ROJO';
-        let color = scoreA >= 30 ? '#3b82f6' : '#ef4444';
+    if (crossedThreshold) {
+        let winnerName = scoreA >= 30 ? 'NOSOTROS' : 'ELLOS';
+        let color = scoreA >= 30 ? '#6366f1' : '#f43f5e';
         Swal.fire({
-            title: '¡Ganó el equipo ' + winnerName + '!',
-            text: 'Llegaron a 30 puntos.',
+            title: '¡Ganaron ' + winnerName + '!',
+            text: 'Llegaron a 30 puntos. ¿Querés limpiar el anotador para la revancha?',
             icon: 'success',
             iconColor: color,
             background: '#0f172a',
             color: '#f8fafc',
+            showCancelButton: true,
             confirmButtonColor: color,
+            cancelButtonColor: '#334155',
+            confirmButtonText: 'Sí, borrar puntos',
+            cancelButtonText: 'No, dejarlo así',
             customClass: { popup: 'border border-white/10 rounded-3xl' }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                scoreA = 0;
+                scoreB = 0;
+                localStorage.setItem('truco_scoreA', 0);
+                localStorage.setItem('truco_scoreB', 0);
+                renderCounter();
+            }
         });
     }
 }
