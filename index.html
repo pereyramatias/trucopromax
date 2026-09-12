@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Tata Di Caprio League ðŸ†</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>ðŸ†</text></svg>">
+    <title>Tata Di Caprio League 🏆</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -85,12 +85,12 @@
     <div id="login-screen" class="fixed inset-0 bg-[#0b1120] z-[100] flex flex-col justify-center items-center px-6 transition-opacity duration-500 hidden">
         <div class="glass-panel p-8 rounded-3xl w-full max-w-sm text-center">
             <h1 class="text-3xl font-extrabold gradient-text mb-1 tracking-tight">TATA DI CAPRIO</h1>
-            <p class="text-brand-400 text-sm mb-8 font-bold uppercase tracking-[0.3em]">League ðŸ†</p>
+            <p class="text-brand-400 text-sm mb-8 font-bold uppercase tracking-[0.3em]">League 🏆</p>
             
             <form id="login-form" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-bold text-slate-300 mb-2">IngresÃ¡ tu PIN para entrar</label>
-                    <input type="password" id="login-pin" class="w-full premium-input rounded-2xl py-4 text-center text-white text-3xl tracking-[0.5em] outline-none placeholder:text-slate-600" placeholder="â€¢â€¢â€¢â€¢" inputmode="numeric" required>
+                    <label class="block text-sm font-bold text-slate-300 mb-2">Ingresá tu PIN para entrar</label>
+                    <input type="password" id="login-pin" class="w-full premium-input rounded-2xl py-4 text-center text-white text-3xl tracking-[0.5em] outline-none placeholder:text-slate-600" placeholder="••••" inputmode="numeric" required>
                 </div>
                 <button type="submit" id="btn-login" class="w-full bg-brand-500 hover:bg-brand-400 text-white font-bold text-lg py-4 rounded-2xl shadow-[0_8px_20px_rgba(14,165,233,0.3)] transition-all active:scale-95 flex justify-center items-center gap-2 mt-2">
                     Ingresar <i class="ph-bold ph-arrow-right"></i>
@@ -104,7 +104,7 @@
         <div class="flex justify-between items-center max-w-lg mx-auto">
             <div>
                 <h1 class="text-[22px] font-extrabold gradient-text tracking-tight">TATA DI CAPRIO</h1>
-                <p class="text-[10px] text-brand-400 font-bold tracking-[0.2em] mt-0.5 uppercase">League ðŸ†</p>
+                <p class="text-[10px] text-brand-400 font-bold tracking-[0.2em] mt-0.5 uppercase">League 🏆</p>
             </div>
             <button onclick="switchView('profile')" class="w-10 h-10 rounded-full bg-brand-500/10 flex items-center justify-center border border-brand-500/20 text-brand-400 hover:bg-brand-500/20 transition-colors cursor-pointer group">
                 <i class="ph-fill ph-user-circle text-2xl group-active:scale-90 transition-transform"></i>
@@ -138,7 +138,7 @@
                     <div>
                         <label class="block text-sm font-medium mb-1 text-slate-400">Nuevo PIN (Opcional)</label>
                         <input type="password" id="profile-pin" class="w-full premium-input rounded-xl py-3 px-4 text-white tracking-[0.2em] outline-none" placeholder="****" inputmode="numeric">
-                        <p class="text-[10px] text-slate-500 mt-1 pl-1">DejÃ¡ esto vacÃ­o si no querÃ©s cambiar tu PIN actual.</p>
+                        <p class="text-[10px] text-slate-500 mt-1 pl-1">Dejá esto vacío si no querés cambiar tu PIN actual.</p>
                     </div>
                     <button type="submit" id="btn-save-profile" class="w-full bg-brand-500 hover:bg-brand-400 text-white font-bold py-3.5 rounded-xl shadow-[0_4px_15px_rgba(14,165,233,0.3)] transition-all active:scale-95 mt-2">
                         Guardar Cambios
@@ -156,7 +156,7 @@
             </div>
             
             <button id="btn-logout" class="w-full bg-slate-800/50 text-slate-400 border border-white/5 font-bold py-4 rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2">
-                <i class="ph-bold ph-sign-out"></i> Cerrar SesiÃ³n
+                <i class="ph-bold ph-sign-out"></i> Cerrar Sesión
             </button>
         </section>
 
@@ -193,7 +193,7 @@
 
         <!-- View: History -->
         <section id="view-history" class="view-section hidden animate-slide-up">
-            <h2 class="text-xl font-bold text-white mb-6 px-2">Ãšltimos Partidos</h2>
+            <h2 class="text-xl font-bold text-white mb-6 px-2">Últimos Partidos</h2>
             
             <!-- Summary Stats -->
             <div id="history-stats" class="flex gap-4 mb-6 hidden">
@@ -256,14 +256,14 @@
 
                 <!-- Ganador -->
                 <div class="pt-4">
-                    <label class="block text-center text-sm font-bold text-slate-300 mb-4">SeleccionÃ¡ al Ganador ðŸ†</label>
+                    <label class="block text-center text-sm font-bold text-slate-300 mb-4">Seleccioná al Ganador 🏆</label>
                     <div class="grid grid-cols-2 gap-4">
                         <button type="button" id="btn-win-a" class="py-6 rounded-3xl font-black text-lg border-2 border-blue-500/20 bg-blue-500/5 text-blue-500 transition-all active:scale-95 flex flex-col items-center justify-center gap-2 relative">
-                            <span class="text-4xl drop-shadow-md transition-transform" id="icon-win-a">ðŸ§Š</span>
+                            <span class="text-4xl drop-shadow-md transition-transform" id="icon-win-a">🧊</span>
                             Nosotros
                         </button>
                         <button type="button" id="btn-win-b" class="py-6 rounded-3xl font-black text-lg border-2 border-red-500/20 bg-red-500/5 text-red-500 transition-all active:scale-95 flex flex-col items-center justify-center gap-2 relative">
-                            <span class="text-4xl drop-shadow-md transition-transform" id="icon-win-b">ðŸ”¥</span>
+                            <span class="text-4xl drop-shadow-md transition-transform" id="icon-win-b">🔥</span>
                             Ellos
                         </button>
                     </div>
@@ -291,7 +291,7 @@
                 <div class="flex-1 glass-panel border-blue-500/20 rounded-3xl flex flex-col items-center justify-between p-4 relative overflow-hidden">
                     <div class="absolute inset-0 bg-blue-500/5"></div>
                     <div class="relative z-10 text-center w-full mt-2">
-                        <h3 class="text-blue-400 font-black tracking-widest uppercase text-sm mb-4">Nosotros ðŸ§Š</h3>
+                        <h3 class="text-blue-400 font-black tracking-widest uppercase text-sm mb-4">Nosotros 🧊</h3>
                         <div id="counter-a-val" class="text-7xl font-black text-white drop-shadow-lg mb-2">0</div>
                     </div>
                     <div class="relative z-10 flex flex-col gap-3 w-full">
@@ -306,7 +306,7 @@
                 <div class="flex-1 glass-panel border-red-500/20 rounded-3xl flex flex-col items-center justify-between p-4 relative overflow-hidden">
                     <div class="absolute inset-0 bg-red-500/5"></div>
                     <div class="relative z-10 text-center w-full mt-2">
-                        <h3 class="text-red-400 font-black tracking-widest uppercase text-sm mb-4">Ellos ðŸ”¥</h3>
+                        <h3 class="text-red-400 font-black tracking-widest uppercase text-sm mb-4">Ellos 🔥</h3>
                         <div id="counter-b-val" class="text-7xl font-black text-white drop-shadow-lg mb-2">0</div>
                     </div>
                     <div class="relative z-10 flex flex-col gap-3 w-full">
@@ -333,7 +333,7 @@
                             </div>
                             <input type="text" id="new-player-name" class="w-full premium-input rounded-2xl py-4 pl-12 pr-4 text-white text-lg outline-none" placeholder="Ej: Fideo" autocomplete="off" required>
                         </div>
-                        <p class="text-xs text-slate-500 mt-3 text-center">Se le asignarÃ¡ el PIN automÃ¡tico: <strong class="text-slate-300">0000</strong></p>
+                        <p class="text-xs text-slate-500 mt-3 text-center">Se le asignará el PIN automático: <strong class="text-slate-300">0000</strong></p>
                     </div>
                     
                     <button type="submit" id="btn-save-player" class="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-lg py-5 rounded-2xl shadow-[0_8px_20px_rgba(16,185,129,0.2)] transition-all active:scale-95 disabled:opacity-50 flex justify-center items-center gap-2">
@@ -372,4 +372,3 @@
     <script src="app.js"></script>
 </body>
 </html>
-

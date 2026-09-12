@@ -97,8 +97,8 @@ function checkSession() {
 
 // Fetch Data
 async function fetchData() {
-    if(!API_URL || API_URL === 'PEGÃ_TU_LINK_DE_APPS_SCRIPT_ACÃ') {
-        showAlert('Falta configuraciÃ³n', 'PegÃ¡ la URL de tu Apps Script.', 'info');
+    if(!API_URL || API_URL === 'PEGÁ_TU_LINK_DE_APPS_SCRIPT_ACÁ') {
+        showAlert('Falta configuración', 'Pegá la URL de tu Apps Script.', 'info');
         return;
     }
 
@@ -130,7 +130,7 @@ async function fetchData() {
         loadingLeaderboard.classList.add('hidden');
         if (appData.players.length > 0) tableContainer.classList.remove('hidden');
         else {
-            loadingLeaderboard.innerHTML = '<p class="text-slate-500 py-8 text-sm">No hay jugadores cargados todavÃ­a.</p>';
+            loadingLeaderboard.innerHTML = '<p class="text-slate-500 py-8 text-sm">No hay jugadores cargados todavía.</p>';
             loadingLeaderboard.classList.remove('hidden');
         }
     }
@@ -152,8 +152,8 @@ function renderLeaderboard() {
         const displayName = player.apodo ? `${player.nombre} "${player.apodo}"` : player.nombre;
 
         let streakIcon = '';
-        if (player.streak >= 2) streakIcon = `<span title="Racha: ${player.streak} ¡GANÓados" class="text-lg drop-shadow-md">ðŸ”¥</span>`;
-        else if (player.streak <= -2) streakIcon = `<span title="Racha: ${Math.abs(player.streak)} perdidos" class="text-lg drop-shadow-md opacity-70">ðŸ§Š</span>`;
+        if (player.streak >= 2) streakIcon = `<span title="Racha: ${player.streak} ganados" class="text-lg drop-shadow-md">🔥</span>`;
+        else if (player.streak <= -2) streakIcon = `<span title="Racha: ${Math.abs(player.streak)} perdidos" class="text-lg drop-shadow-md opacity-70">🧊</span>`;
 
         const row = document.createElement('tr');
         row.className = "border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer group";
@@ -185,7 +185,7 @@ function renderHistory() {
     const stat3v3 = document.getElementById('stat-3v3');
 
     if (!appData.matches || appData.matches.length === 0) {
-        historyContainer.innerHTML = '<div class="glass-panel p-8 rounded-3xl text-center"><i class="ph ph-scroll text-4xl text-slate-600 mb-3 block"></i><p class="text-slate-400 text-sm">AÃºn no hay partidos jugados.</p></div>';
+        historyContainer.innerHTML = '<div class="glass-panel p-8 rounded-3xl text-center"><i class="ph ph-scroll text-4xl text-slate-600 mb-3 block"></i><p class="text-slate-400 text-sm">Aún no hay partidos jugados.</p></div>';
         if (statsContainer) statsContainer.classList.add('hidden');
         return;
     }
@@ -228,7 +228,7 @@ function renderHistory() {
                 <div class="flex-1 flex flex-col justify-between p-4 rounded-2xl ${isWinA ? 'bg-blue-500/10 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.1)]' : 'bg-slate-800/30 border border-white/5'}">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="w-2 h-2 rounded-full ${isWinA ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]' : 'bg-slate-600'}"></div>
-                        <span class="text-xs font-bold ${isWinA ? 'text-blue-400' : 'text-slate-500'}">AZUL</span>
+                        <span class="text-xs font-bold ${isWinA ? 'text-blue-400' : 'text-slate-500'}">NOSOTROS</span>
                     </div>
                     <div class="text-[13px] font-medium text-slate-300 flex flex-col gap-2">
                         ${teamAArr.map(p => `<span class="truncate">${p}</span>`).join('')}
@@ -244,7 +244,7 @@ function renderHistory() {
                 <div class="flex-1 flex flex-col justify-between p-4 rounded-2xl ${isWinB ? 'bg-red-500/10 border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'bg-slate-800/30 border border-white/5'}">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="w-2 h-2 rounded-full ${isWinB ? 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.8)]' : 'bg-slate-600'}"></div>
-                        <span class="text-xs font-bold ${isWinB ? 'text-red-400' : 'text-slate-500'}">ROJO</span>
+                        <span class="text-xs font-bold ${isWinB ? 'text-red-400' : 'text-slate-500'}">ELLOS</span>
                     </div>
                     <div class="text-[13px] font-medium text-slate-300 flex flex-col gap-2">
                         ${teamBArr.map(p => `<span class="truncate">${p}</span>`).join('')}
@@ -253,7 +253,7 @@ function renderHistory() {
                 </div>
             </div>
             
-            <!-- AuditorÃ­a -->
+            <!-- Auditoría -->
             <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-end gap-1.5 opacity-60">
                 <i class="ph-fill ph-pencil-simple text-[10px]"></i>
                 <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Cargado por: ${auditor}</span>
@@ -268,13 +268,13 @@ function renderHistory() {
 
 window.deleteMatch = async function(matchId) {
     const confirm = await Swal.fire({
-        title: 'Â¿Borrar partido?',
-        text: 'Se van a restar los puntos de este partido a los jugadores. Esta acciÃ³n no se puede deshacer.',
+        title: '¿Borrar partido?',
+        text: 'Se van a restar los puntos de este partido a los jugadores. Esta acción no se puede deshacer.',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
         cancelButtonColor: '#334155',
-        confirmButtonText: 'SÃ­, borrar',
+        confirmButtonText: 'Sí, borrar',
         cancelButtonText: 'Cancelar',
         background: '#0f172a',
         color: '#f8fafc',
@@ -302,7 +302,7 @@ window.deleteMatch = async function(matchId) {
         const result = await response.json();
         
         if(result.success) {
-            Swal.fire({ title: 'Â¡Borrado!', text: result.message, icon: 'success', background: '#0f172a', color: '#f8fafc', confirmButtonColor: '#0ea5e9' });
+            Swal.fire({ title: '¡Borrado!', text: result.message, icon: 'success', background: '#0f172a', color: '#f8fafc', confirmButtonColor: '#0ea5e9' });
             fetchData();
         } else {
             Swal.fire({ title: 'Error', text: result.message, icon: 'error', background: '#0f172a', color: '#f8fafc', confirmButtonColor: '#0ea5e9' });
@@ -385,10 +385,10 @@ matchForm.addEventListener('submit', async (e) => {
     const teamB = Array.from(selectedTeamB);
     const winner = matchWinnerInput.value;
 
-    if (teamA.length === 0 || teamB.length === 0) return showAlert('AtenciÃ³n', 'ElegÃ­ los jugadores de ambos equipos.', 'warning');
-    if (teamA.length !== teamB.length) return showAlert('Equipos desparejos', `El Equipo Azul tiene ${teamA.length} y el Equipo Rojo tiene ${teamB.length}. Tienen que ser la misma cantidad.`, 'error');
-    if (teamA.length < 2 || teamA.length > 3) return showAlert('Formato invÃ¡lido', 'Solo se permite jugar 2v2 (Pica Pica) o 3v3 (Gallo).', 'warning');
-    if (!winner) return showAlert('Falta', 'TenÃ©s que seleccionar quiÃ©n ¡GANÓÃ³ el partido.', 'warning');
+    if (teamA.length === 0 || teamB.length === 0) return showAlert('Atención', 'Elegí los jugadores de ambos equipos.', 'warning');
+    if (teamA.length !== teamB.length) return showAlert('Equipos desparejos', `El Equipo Nosotros tiene ${teamA.length} y el Equipo Ellos tiene ${teamB.length}. Tienen que ser la misma cantidad.`, 'error');
+    if (teamA.length < 2 || teamA.length > 3) return showAlert('Formato inválido', 'Solo se permite jugar 2v2 (Pica Pica) o 3v3 (Gallo).', 'warning');
+    if (!winner) return showAlert('Falta', 'Tenés que seleccionar quién ganó el partido.', 'warning');
 
     btnSaveMatch.disabled = true;
     btnSaveMatch.innerHTML = '<i class="ph ph-spinner animate-spin text-xl"></i> Guardando...';
@@ -402,7 +402,7 @@ matchForm.addEventListener('submit', async (e) => {
         
         const result = await response.json();
         if(result.success) {
-            Toast.fire({ icon: 'success', title: 'Â¡Partido guardado con Ã©xito!' });
+            Toast.fire({ icon: 'success', title: '¡Partido guardado con éxito!' });
             
             selectedTeamA.clear();
             selectedTeamB.clear();
@@ -446,9 +446,9 @@ playerForm.addEventListener('submit', async (e) => {
             playerForm.reset();
             switchView('leaderboard');
             fetchData();
-        } else showAlert('AtenciÃ³n', result.message, 'warning');
+        } else showAlert('Atención', result.message, 'warning');
     } catch (error) {
-        showAlert('Ups...', 'OcurriÃ³ un error al guardar.', 'error');
+        showAlert('Ups...', 'Ocurrió un error al guardar.', 'error');
     } finally {
         btnSavePlayer.disabled = false;
         btnSavePlayer.innerHTML = '<i class="ph ph-user-plus text-xl"></i> Sumar Jugador';
@@ -487,12 +487,12 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
             document.getElementById('profile-apodo').value = currentUser.apodo || '';
             
             fetchData();
-            Toast.fire({ icon: 'success', title: `Â¡Bienvenido ${currentUser.apodo || currentUser.nombre}!` });
+            Toast.fire({ icon: 'success', title: `¡Bienvenido ${currentUser.apodo || currentUser.nombre}!` });
         } else {
-            showAlert('PIN InvÃ¡lido', 'El PIN no es correcto o no fue asignado.', 'error');
+            showAlert('PIN Inválido', 'El PIN no es correcto o no fue asignado.', 'error');
         }
     } catch(err) {
-        showAlert('Error', 'Problema de conexiÃ³n.', 'error');
+        showAlert('Error', 'Problema de conexión.', 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = 'Ingresar <i class="ph-bold ph-arrow-right"></i>';
@@ -531,8 +531,8 @@ function checkSession() {
 // END SEASON
 document.getElementById('btn-end-season').addEventListener('click', async () => {
     const { value: text } = await Swal.fire({
-        title: 'Â¡CUIDADO!',
-        html: 'EstÃ¡s por finalizar la temporada actual. Se va a generar una copia de seguridad automÃ¡tica en tu Google SheetSí, y luego <b>los puntos y partidos de todos volverÃ¡n a 0</b>.<br><br>Para confirmar, escribÃ­ <b>RESETEAR</b>:',
+        title: '¡CUIDADO!',
+        html: 'Estás por finalizar la temporada actual. Se va a generar una copia de seguridad automática en tu Google Sheets, y luego <b>los puntos y partidos de todos volverán a 0</b>.<br><br>Para confirmar, escribí <b>RESETEAR</b>:',
         input: 'text',
         inputPlaceholder: 'RESETEAR',
         icon: 'warning',
@@ -568,7 +568,7 @@ document.getElementById('btn-end-season').addEventListener('click', async () => 
         const result = await response.json();
         
         if(result.success) {
-            Swal.fire({ title: 'Â¡Nueva Temporada!', text: result.message, icon: 'success', background: '#0f172a', color: '#f8fafc', confirmButtonColor: '#0ea5e9' });
+            Swal.fire({ title: '¡Nueva Temporada!', text: result.message, icon: 'success', background: '#0f172a', color: '#f8fafc', confirmButtonColor: '#0ea5e9' });
             fetchData();
         } else {
             Swal.fire({ title: 'Error', text: result.message, icon: 'error', background: '#0f172a', color: '#f8fafc', confirmButtonColor: '#0ea5e9' });
@@ -622,7 +622,7 @@ document.getElementById('btn-refresh').addEventListener('click', fetchData);
 document.querySelector('[data-target="view-leaderboard"]').classList.add('active', 'text-white');
 checkSession();
 
-// --- NUEVAS FUNCIONES: RachaSí, Paternidades y Armador ---
+// --- NUEVAS FUNCIONES: Rachas, Paternidades y Armador ---
 
 function enrichPlayerData() {
     appData.players.forEach(p => {
@@ -636,7 +636,7 @@ function enrichPlayerData() {
     const playerMap = {};
     appData.players.forEach(p => playerMap[p.nombre] = p);
 
-    const sortedMatches = [...appData.matches].reverse(); // del mos nuevo al mos viejo
+    const sortedMatches = [...appData.matches].reverse(); // del mas nuevo al mas viejo
     
     appData.players.forEach(p => {
         let currentStreak = 0;
@@ -711,15 +711,15 @@ window.showPlayerStats = function(playerName) {
             </div>
             <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-white/5">
                 <span class="text-slate-400 font-semibold text-sm">Racha Actual</span>
-                <span class="text-white font-bold">` + (p.streak > 0 ? '+' : '') + p.streak + (p.streak >= 2 ? ' ðŸ”¥' : (p.streak <= -2 ? ' ðŸ§Š' : '')) + `</span>
+                <span class="text-white font-bold">` + (p.streak > 0 ? '+' : '') + p.streak + (p.streak >= 2 ? ' 🔥' : (p.streak <= -2 ? ' 🧊' : '')) + `</span>
             </div>
             <div class="bg-red-500/10 p-3 rounded-xl border border-red-500/20">
-                <p class="text-red-400 text-xs font-bold uppercase tracking-wider mb-1">Su PapÃ¡ (MÃ¡s derrotas contra)</p>
-                <p class="text-white font-semibold">` + (p.papa ? p.papa + ' (' + p.lossesAgainst[p.papa] + ' veces)' : 'Nadie todavÃ­a') + `</p>
+                <p class="text-red-400 text-xs font-bold uppercase tracking-wider mb-1">Su Papá (Más derrotas contra)</p>
+                <p class="text-white font-semibold">` + (p.papa ? p.papa + ' (' + p.lossesAgainst[p.papa] + ' veces)' : 'Nadie todavía') + `</p>
             </div>
             <div class="bg-blue-500/10 p-3 rounded-xl border border-blue-500/20">
-                <p class="text-blue-400 text-xs font-bold uppercase tracking-wider mb-1">De Hijo (MÃ¡s victorias contra)</p>
-                <p class="text-white font-semibold">` + (p.hijo ? p.hijo + ' (' + p.winsAgainst[p.hijo] + ' veces)' : 'Nadie todavÃ­a') + `</p>
+                <p class="text-blue-400 text-xs font-bold uppercase tracking-wider mb-1">De Hijo (Más victorias contra)</p>
+                <p class="text-white font-semibold">` + (p.hijo ? p.hijo + ' (' + p.winsAgainst[p.hijo] + ' veces)' : 'Nadie todavía') + `</p>
             </div>
         </div>
     `;
@@ -746,17 +746,17 @@ window.openTeamBuilder = function() {
     }).join('');
 
     Swal.fire({
-        title: 'Armador Inteligente ðŸŽ²',
-        html: '<p class="text-sm text-slate-400 mb-4">SeleccionÃ¡ a los presentes (4 o 6):</p><div class="flex flex-wrap justify-center mb-4" id="builder-chips-container">' + chipsHtml + '</div><p id="builder-count" class="text-xs font-bold text-brand-400">0 seleccionados</p>',
+        title: 'Armador Inteligente 🎲',
+        html: '<p class="text-sm text-slate-400 mb-4">Seleccioná a los presentes (4 o 6):</p><div class="flex flex-wrap justify-center mb-4" id="builder-chips-container">' + chipsHtml + '</div><p id="builder-count" class="text-xs font-bold text-brand-400">0 seleccionados</p>',
         background: '#0f172a',
         color: '#f8fafc',
         showCancelButton: true,
-        confirmButtonText: 'Â¡Armar Parejo!',
+        confirmButtonText: '¡Armar Parejo!',
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#6366f1',
         preConfirm: () => {
             if (builderSelected.size !== 4 && builderSelected.size !== 6) {
-                Swal.showValidationMessage('TenÃ©s que seleccionar exactamente 4 o 6 jugadores.');
+                Swal.showValidationMessage('Tenés que seleccionar exactamente 4 o 6 jugadores.');
                 return false;
             }
             return Array.from(builderSelected);
@@ -784,7 +784,7 @@ window.toggleBuilderChip = function(name) {
 function generateBalancedTeams(playersArr) {
     const ps = playersArr.map(name => appData.players.find(x => x.nombre === name));
     const teamSize = ps.length / 2;
-    const combinations = getCombinations(pSí, teamSize);
+    const combinations = getCombinations(ps, teamSize);
     
     let bestDiff = Infinity;
     let bestTeamA = [];
