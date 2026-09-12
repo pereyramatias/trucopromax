@@ -233,7 +233,7 @@ function renderHistory() {
                     <div class="text-[13px] font-medium text-slate-300 flex flex-col gap-2">
                         ${teamAArr.map(p => `<span class="truncate">${p}</span>`).join('')}
                     </div>
-                    ${isWinA ? '<div class="mt-4"><i class="ph-fill ph-trophy text-blue-400 text-xl drop-shadow-md"></i></div>' : ''}
+                    ${isWinA ? '<div class="mt-4"><i class="ph-fill ph-trophy text-blue-400 text-xl drop-shadow-md"></i></div>' : '<div class="mt-4 text-xl drop-shadow-md opacity-70 grayscale" title="A llorar al campito">🍼</div>'}
                 </div>
 
                 <div class="flex items-center justify-center">
@@ -249,7 +249,7 @@ function renderHistory() {
                     <div class="text-[13px] font-medium text-slate-300 flex flex-col gap-2">
                         ${teamBArr.map(p => `<span class="truncate">${p}</span>`).join('')}
                     </div>
-                    ${isWinB ? '<div class="mt-4"><i class="ph-fill ph-trophy text-red-400 text-xl drop-shadow-md"></i></div>' : ''}
+                    ${isWinB ? '<div class="mt-4"><i class="ph-fill ph-trophy text-red-400 text-xl drop-shadow-md"></i></div>' : '<div class="mt-4 text-xl drop-shadow-md opacity-70 grayscale" title="A llorar al campito">🍼</div>'}
                 </div>
             </div>
             
