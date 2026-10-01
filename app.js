@@ -123,6 +123,8 @@ async function fetchData() {
         renderLeaderboard();
         renderHistory();
         renderTeamChips();
+        if (typeof renderAsadoAttendees === 'function') renderAsadoAttendees();
+        if (typeof renderAsadoExpensesList === 'function') renderAsadoExpensesList();
     } catch (error) {
         console.error(error);
         showAlert('Error', 'No se pudo sincronizar con los servidores.', 'error');
@@ -912,3 +914,299 @@ window.resetCounter = async function() {
 
 // Inicializar anotador visualmente
 renderCounter();
+
+// --- CALCULADORA DE ASADOS ---
+
+let asadoAttendees = new Set();
+let asadoExpenses = [];
+let currentExpenseConsumers = new Set();
+
+function renderAsadoAttendees() {
+    const container = document.getElementById('asado-attendees-chips');
+    if (!container) return;
+    
+    // Sort all players
+    const sorted = [...appData.players].sort((a, b) => a.nombre.localeCompare(b.nombre));
+    
+    container.innerHTML = sorted.map(p => {
+        const isSelected = asadoAttendees.has(p.nombre);
+        const btnClass = isSelected 
+            ? 'bg-orange-500 text-white shadow-[0_0_12px_rgba(249,115,22,0.5)] border-orange-400' 
+            : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border-white/10';
+        
+        return `<button type="button" onclick="toggleAsadoAttendee('${p.nombre}')" class="px-3 py-1.5 rounded-full text-[13px] font-semibold transition-all border ${btnClass}">
+            ${p.nombre}
+        </button>`;
+    }).join('');
+}
+
+window.toggleAsadoAttendee = function(name) {
+    if (asadoAttendees.has(name)) {
+        asadoAttendees.delete(name);
+        currentExpenseConsumers.delete(name);
+    } else {
+        asadoAttendees.add(name);
+        currentExpenseConsumers.add(name);
+    }
+    renderAsadoAttendees();
+    renderAsadoExpenseConsumers();
+    updatePayerDropdown();
+}
+
+function updatePayerDropdown() {
+    const select = document.getElementById('asado-exp-payer');
+    if (!select) return;
+    const currentVal = select.value;
+    select.innerHTML = '';
+    
+    const attendeesArr = Array.from(asadoAttendees).sort();
+    attendeesArr.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p;
+        opt.text = p;
+        select.appendChild(opt);
+    });
+    
+    if (attendeesArr.includes(currentVal)) select.value = currentVal;
+}
+
+window.openAddExpenseForm = function() {
+    if (asadoAttendees.size === 0) {
+        return showAlert('Atención', 'Primero seleccioná quiénes van al asado arriba.', 'warning');
+    }
+    document.getElementById('asado-expense-form').classList.remove('hidden');
+    document.getElementById('btn-show-expense-form').classList.add('hidden');
+    
+    document.getElementById('asado-exp-desc').value = '';
+    document.getElementById('asado-exp-amount').value = '';
+    
+    currentExpenseConsumers = new Set(asadoAttendees);
+    renderAsadoExpenseConsumers();
+    updatePayerDropdown();
+}
+
+window.cancelExpense = function() {
+    document.getElementById('asado-expense-form').classList.add('hidden');
+    document.getElementById('btn-show-expense-form').classList.remove('hidden');
+}
+
+function renderAsadoExpenseConsumers() {
+    const container = document.getElementById('asado-exp-consumers');
+    if (!container) return;
+    
+    const attendeesArr = Array.from(asadoAttendees).sort();
+    container.innerHTML = attendeesArr.map(p => {
+        const isSelected = currentExpenseConsumers.has(p);
+        const btnClass = isSelected 
+            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' 
+            : 'bg-slate-800/50 text-slate-500 border-transparent opacity-60';
+        
+        return `<button type="button" onclick="toggleExpenseConsumer('${p}')" class="px-2 py-1 rounded-lg text-[11px] font-bold transition-all border ${btnClass}">
+            ${p}
+        </button>`;
+    }).join('');
+}
+
+window.toggleExpenseConsumer = function(name) {
+    if (currentExpenseConsumers.has(name)) currentExpenseConsumers.delete(name);
+    else currentExpenseConsumers.add(name);
+    renderAsadoExpenseConsumers();
+}
+
+window.saveExpense = function() {
+    const desc = document.getElementById('asado-exp-desc').value.trim();
+    const amountStr = document.getElementById('asado-exp-amount').value;
+    const payer = document.getElementById('asado-exp-payer').value;
+    
+    const amount = parseFloat(amountStr);
+    
+    if (!desc) return showAlert('Falta', 'Poné qué compraste (ej. Carne)', 'warning');
+    if (!amount || amount <= 0) return showAlert('Falta', 'Poné el monto gastado', 'warning');
+    if (!payer) return showAlert('Falta', 'Seleccioná quién pagó', 'warning');
+    if (currentExpenseConsumers.size === 0) return showAlert('Falta', 'Al menos uno tiene que consumir este gasto', 'warning');
+
+    const exp = {
+        id: Date.now(),
+        desc,
+        amount,
+        payer,
+        consumers: Array.from(currentExpenseConsumers)
+    };
+    
+    asadoExpenses.push(exp);
+    renderAsadoExpensesList();
+    cancelExpense();
+}
+
+window.deleteExpense = function(id) {
+    asadoExpenses = asadoExpenses.filter(e => e.id !== id);
+    renderAsadoExpensesList();
+}
+
+function formatMoney(num) {
+    return '$' + num.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function renderAsadoExpensesList() {
+    const container = document.getElementById('asado-expenses-list');
+    if (!container) return;
+    
+    if (asadoExpenses.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-500 text-center py-2">Todavía no hay gastos.</p>';
+        return;
+    }
+    
+    container.innerHTML = asadoExpenses.map(exp => `
+        <div class="bg-slate-800/40 p-3 rounded-xl border border-white/5 flex justify-between items-center">
+            <div>
+                <p class="text-white font-bold text-sm">${exp.desc} <span class="text-emerald-400 ml-1">${formatMoney(exp.amount)}</span></p>
+                <p class="text-[10px] text-slate-400 mt-1">Pagó: <span class="text-slate-300 font-semibold">${exp.payer}</span> • Para ${exp.consumers.length} pers.</p>
+            </div>
+            <button onclick="deleteExpense(${exp.id})" class="text-red-400/50 hover:text-red-400 p-2"><i class="ph-fill ph-trash text-lg"></i></button>
+        </div>
+    `).join('');
+}
+
+window.calculateAsado = function() {
+    if (asadoAttendees.size === 0 || asadoExpenses.length === 0) {
+        return showAlert('Faltan datos', 'Agregá asistentes y al menos un gasto para calcular.', 'warning');
+    }
+
+    // Calcular balances
+    let balances = {};
+    asadoAttendees.forEach(p => balances[p] = { paid: 0, consumed: 0, net: 0 });
+
+    asadoExpenses.forEach(exp => {
+        balances[exp.payer].paid += exp.amount;
+        balances[exp.payer].net += exp.amount;
+        
+        const share = exp.amount / exp.consumers.length;
+        exp.consumers.forEach(c => {
+            balances[c].consumed += share;
+            balances[c].net -= share;
+        });
+    });
+
+    let debtors = []; // Tienen que pagar (net < 0)
+    let creditors = []; // Tienen que recibir (net > 0)
+
+    for (const person of asadoAttendees) {
+        let net = balances[person].net;
+        if (net < -0.01) debtors.push({ name: person, amount: Math.abs(net) });
+        else if (net > 0.01) creditors.push({ name: person, amount: net });
+    }
+
+    // Ordenar para optimizar transferencias (los que más deben pagan a los que más reciben)
+    debtors.sort((a, b) => b.amount - a.amount);
+    creditors.sort((a, b) => b.amount - a.amount);
+
+    let transfers = [];
+    let i = 0;
+    let j = 0;
+
+    while (i < debtors.length && j < creditors.length) {
+        let debtor = debtors[i];
+        let creditor = creditors[j];
+
+        let amount = Math.min(debtor.amount, creditor.amount);
+        let roundedAmount = Math.round(amount);
+        
+        if (roundedAmount > 0) {
+            transfers.push({
+                from: debtor.name,
+                to: creditor.name,
+                amount: roundedAmount
+            });
+        }
+
+        debtor.amount -= amount;
+        creditor.amount -= amount;
+
+        if (debtor.amount < 0.01) i++;
+        if (creditor.amount < 0.01) j++;
+    }
+
+    renderAsadoResults(balances, transfers);
+}
+
+function renderAsadoResults(balances, transfers) {
+    document.getElementById('asado-results').classList.remove('hidden');
+    
+    // Transferencias
+    const transfersContainer = document.getElementById('asado-transfers-list');
+    if (transfers.length === 0) {
+        transfersContainer.innerHTML = '<p class="text-sm text-emerald-400 font-bold bg-emerald-500/10 p-4 rounded-xl text-center">¡Están todos a mano! No hay que hacer transferencias.</p>';
+    } else {
+        transfersContainer.innerHTML = transfers.map(t => `
+            <div class="bg-slate-800/60 p-3.5 rounded-xl border border-white/5 flex items-center justify-between gap-3">
+                <div class="flex-1 flex items-center justify-end gap-2 text-right">
+                    <span class="text-sm font-bold text-slate-300 truncate">${t.from}</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-yellow-400 font-black text-[15px] bg-yellow-500/10 px-2 py-0.5 rounded-md border border-yellow-500/20">${formatMoney(t.amount)}</span>
+                    <i class="ph-bold ph-arrow-right text-slate-500 mt-1"></i>
+                </div>
+                <div class="flex-1 flex items-center justify-start gap-2 text-left">
+                    <span class="text-sm font-bold text-emerald-400 truncate">${t.to}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Resumen
+    const balancesContainer = document.getElementById('asado-balances-list');
+    const sortedBalances = Object.keys(balances).sort((a, b) => balances[b].net - balances[a].net); // Acreedores primero
+    
+    balancesContainer.innerHTML = sortedBalances.map(name => {
+        const b = balances[name];
+        const netRounded = Math.round(b.net);
+        let badge = '';
+        if (netRounded > 0) badge = '<span class="text-emerald-400 text-xs font-bold">+ ' + formatMoney(netRounded) + '</span>';
+        else if (netRounded < 0) badge = '<span class="text-red-400 text-xs font-bold">- ' + formatMoney(Math.abs(netRounded)) + '</span>';
+        else badge = '<span class="text-slate-400 text-xs font-bold">Hecho</span>';
+
+        return `
+            <div class="flex justify-between items-center bg-slate-800/30 px-3 py-2.5 rounded-lg border border-white/5">
+                <div>
+                    <p class="text-sm font-bold text-white">${name} ${badge}</p>
+                    <p class="text-[10px] text-slate-400">Puso: ${formatMoney(b.paid)} • Consumió: ${formatMoney(b.consumed)}</p>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Scrollear hacia los resultados
+    document.getElementById('asado-results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+window.resetAsado = async function() {
+    const confirm = await Swal.fire({
+        title: '¿Limpiar todo?',
+        text: 'Se van a borrar los asistentes y los gastos cargados.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#334155',
+        confirmButtonText: 'Sí, limpiar',
+        cancelButtonText: 'Cancelar',
+        background: '#0f172a',
+        color: '#f8fafc',
+        customClass: { popup: 'border border-white/10 rounded-3xl' }
+    });
+
+    if (confirm.isConfirmed) {
+        asadoAttendees.clear();
+        asadoExpenses = [];
+        currentExpenseConsumers.clear();
+        document.getElementById('asado-results').classList.add('hidden');
+        renderAsadoAttendees();
+        renderAsadoExpensesList();
+        cancelExpense();
+    }
+}
+
+
+
+
+
+

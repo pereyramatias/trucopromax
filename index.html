@@ -343,6 +343,86 @@
                 </form>
             </div>
         </section>
+        <!-- View: Asado -->
+        <section id="view-asado" class="view-section hidden animate-slide-up">
+            <div class="flex justify-between items-center mb-6 px-2">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2"><i class="ph-fill ph-fire text-orange-500"></i> Cuentas Asado</h2>
+                <button onclick="resetAsado()" class="text-slate-400 hover:text-white transition-colors p-2 -mr-2" title="Limpiar todo">
+                    <i class="ph ph-trash text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Paso 1: Asistentes -->
+            <div class="glass-panel p-5 rounded-3xl mb-4 relative overflow-hidden">
+                <h3 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                    <i class="ph-fill ph-users text-brand-400"></i> 1. ¿Quiénes van?
+                </h3>
+                <div id="asado-attendees-chips" class="flex flex-wrap gap-2">
+                    <!-- JS rellena esto -->
+                </div>
+            </div>
+
+            <!-- Paso 2: Gastos -->
+            <div class="glass-panel p-5 rounded-3xl mb-4 relative overflow-hidden">
+                <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                    <i class="ph-fill ph-receipt text-emerald-400"></i> 2. Gastos
+                </h3>
+                
+                <div id="asado-expenses-list" class="space-y-3 mb-4">
+                    <!-- JS rellena esto -->
+                </div>
+
+                <div id="asado-expense-form" class="hidden bg-slate-800/40 p-4 rounded-2xl border border-emerald-500/20 mb-4">
+                    <input type="text" id="asado-exp-desc" placeholder="¿Qué se compró? (ej. Carne)" class="w-full premium-input rounded-xl py-2.5 px-3 text-white mb-3 outline-none text-sm">
+                    <div class="flex gap-2 mb-3">
+                        <div class="flex-1">
+                            <label class="text-[9px] text-slate-400 font-bold uppercase ml-1 block mb-1">Pagó</label>
+                            <select id="asado-exp-payer" class="w-full premium-input rounded-xl py-2.5 px-2 text-white outline-none text-sm appearance-none bg-slate-800"></select>
+                        </div>
+                        <div class="flex-1">
+                            <label class="text-[9px] text-slate-400 font-bold uppercase ml-1 block mb-1">Monto ($)</label>
+                            <input type="number" id="asado-exp-amount" placeholder="0" class="w-full premium-input rounded-xl py-2.5 px-3 text-white outline-none text-sm">
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="text-[9px] text-slate-400 font-bold uppercase ml-1 block mb-2">¿Quiénes consumen? (Destildá a los que no)</label>
+                        <div id="asado-exp-consumers" class="flex flex-wrap gap-1.5"></div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="cancelExpense()" class="flex-1 bg-slate-700/50 text-slate-300 py-2.5 rounded-xl font-bold text-xs hover:bg-slate-700 transition-colors">Cancelar</button>
+                        <button onclick="saveExpense()" class="flex-1 bg-emerald-500 text-white py-2.5 rounded-xl font-bold text-xs shadow-[0_0_10px_rgba(16,185,129,0.3)] hover:bg-emerald-400 transition-colors">Guardar</button>
+                    </div>
+                </div>
+
+                <button id="btn-show-expense-form" onclick="openAddExpenseForm()" class="w-full bg-slate-800/50 text-emerald-400 border border-emerald-500/20 font-bold py-3 rounded-xl active:scale-95 transition-all text-sm flex justify-center items-center gap-2">
+                    <i class="ph-bold ph-plus"></i> Agregar Gasto
+                </button>
+            </div>
+
+            <!-- Paso 3: Calcular -->
+            <button onclick="calculateAsado()" class="w-full bg-brand-500 hover:bg-brand-400 text-white font-bold text-lg py-4 rounded-2xl shadow-[0_8px_20px_rgba(14,165,233,0.3)] transition-all active:scale-95 flex justify-center items-center gap-2 mb-6">
+                <i class="ph-bold ph-calculator"></i> Calcular Cuentas
+            </button>
+
+            <!-- Resultados -->
+            <div id="asado-results" class="hidden mb-8">
+                <div class="glass-panel p-5 rounded-3xl relative overflow-hidden">
+                    <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                        <i class="ph-fill ph-hand-coins text-yellow-400"></i> Quién le pasa a quién
+                    </h3>
+                    <div id="asado-transfers-list" class="space-y-3 mb-6">
+                        <!-- JS rellena esto -->
+                    </div>
+
+                    <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                        <i class="ph-fill ph-list-numbers text-brand-400"></i> Resumen de cada uno
+                    </h3>
+                    <div id="asado-balances-list" class="space-y-2">
+                        <!-- JS rellena esto -->
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <!-- Bottom Navigation -->
@@ -366,6 +446,10 @@
         <button onclick="switchView('player')" class="nav-btn flex flex-col items-center gap-1.5 p-2 text-slate-500 hover:text-white flex-1 transition-colors group" data-target="view-player">
             <i class="ph-fill ph-user-plus text-2xl group-[.active]:text-brand-400 transition-colors"></i>
             <span class="text-[10px] font-semibold tracking-wide group-[.active]:text-white transition-colors">Nuevo</span>
+        </button>
+        <button onclick="switchView('asado')" class="nav-btn flex flex-col items-center gap-1.5 p-2 text-slate-500 hover:text-white flex-1 transition-colors group" data-target="view-asado">
+            <i class="ph-fill ph-fire text-2xl group-[.active]:text-brand-400 transition-colors"></i>
+            <span class="text-[10px] font-semibold tracking-wide group-[.active]:text-white transition-colors">Asado</span>
         </button>
     </nav>
 
