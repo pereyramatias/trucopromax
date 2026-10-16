@@ -690,14 +690,39 @@ function enrichPlayerData() {
     });
 
     appData.players.forEach(p => {
-        let maxWins = 0;
-        for (let op in p.winsAgainst) {
-            if (p.winsAgainst[op] > maxWins) { maxWins = p.winsAgainst[op]; p.hijo = op; }
-        }
-        let maxLosses = 0;
-        for (let op in p.lossesAgainst) {
-            if (p.lossesAgainst[op] > maxLosses) { maxLosses = p.lossesAgainst[op]; p.papa = op; }
-        }
+        const opponents = new Set([
+            ...Object.keys(p.winsAgainst),
+            ...Object.keys(p.lossesAgainst)
+        ]);
+
+        let maxPosDiff = 0; // Mejor diferencia a favor (De Hijo)
+        let bestHijoWins = 0;
+
+        let maxNegDiff = 0; // Peor diferencia en contra (Su Papá)
+        let bestPapaLosses = 0;
+
+        opponents.forEach(op => {
+            const w = p.winsAgainst[op] || 0;
+            const l = p.lossesAgainst[op] || 0;
+            const diff = w - l;
+
+            // Para tener a alguien de hijo, tenés que llevarle ventaja (diff > 0)
+            if (diff > maxPosDiff || (diff === maxPosDiff && diff > 0 && w > bestHijoWins)) {
+                maxPosDiff = diff;
+                bestHijoWins = w;
+                p.hijo = op;
+                p.hijoStats = `${w} a ${l} (+${diff})`;
+            }
+
+            // Para que sea tu papá, te tiene que llevar ventaja (l - w > 0)
+            const lossDiff = l - w;
+            if (lossDiff > maxNegDiff || (lossDiff === maxNegDiff && lossDiff > 0 && l > bestPapaLosses)) {
+                maxNegDiff = lossDiff;
+                bestPapaLosses = l;
+                p.papa = op;
+                p.papaStats = `${l} a ${w} (-${lossDiff})`;
+            }
+        });
     });
 }
 
@@ -716,12 +741,12 @@ window.showPlayerStats = function(playerName) {
                 <span class="text-white font-bold">` + (p.streak > 0 ? '+' : '') + p.streak + (p.streak >= 2 ? ' 🔥' : (p.streak <= -2 ? ' 🧊' : '')) + `</span>
             </div>
             <div class="bg-red-500/10 p-3 rounded-xl border border-red-500/20">
-                <p class="text-red-400 text-xs font-bold uppercase tracking-wider mb-1">Su Papá (Más derrotas contra)</p>
-                <p class="text-white font-semibold">` + (p.papa ? p.papa + ' (' + p.lossesAgainst[p.papa] + ' veces)' : 'Nadie todavía') + `</p>
+                <p class="text-red-400 text-xs font-bold uppercase tracking-wider mb-1">Su Papá (Historial en contra)</p>
+                <p class="text-white font-semibold">` + (p.papa ? `${p.papa} <span class="text-xs text-red-400/80 font-normal ml-1">(${p.papaStats})</span>` : 'Nadie todavía') + `</p>
             </div>
             <div class="bg-blue-500/10 p-3 rounded-xl border border-blue-500/20">
-                <p class="text-blue-400 text-xs font-bold uppercase tracking-wider mb-1">De Hijo (Más victorias contra)</p>
-                <p class="text-white font-semibold">` + (p.hijo ? p.hijo + ' (' + p.winsAgainst[p.hijo] + ' veces)' : 'Nadie todavía') + `</p>
+                <p class="text-blue-400 text-xs font-bold uppercase tracking-wider mb-1">De Hijo (Historial a favor)</p>
+                <p class="text-white font-semibold">` + (p.hijo ? `${p.hijo} <span class="text-xs text-blue-400/80 font-normal ml-1">(${p.hijoStats})</span>` : 'Nadie todavía') + `</p>
             </div>
         </div>
     `;
