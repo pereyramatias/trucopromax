@@ -28,6 +28,8 @@ const btnSavePlayer = document.getElementById('btn-save-player');
 // State para chips
 let selectedTeamA = new Set();
 let selectedTeamB = new Set();
+let guestCountA = 0;
+let guestCountB = 0;
 
 // Nav logic
 function switchView(viewName) {
@@ -142,9 +144,14 @@ function getInitials(name) {
     return name.substring(0, 2).toUpperCase();
 }
 
+function isGuestPlayer(name) {
+    return name && name.trim().toLowerCase() === 'invitado';
+}
+
 function renderLeaderboard() {
     leaderboardBody.innerHTML = '';
-    appData.players.forEach((player, index) => {
+    const rankedPlayers = appData.players.filter(p => !isGuestPlayer(p.nombre));
+    rankedPlayers.forEach((player, index) => {
         let badge = '';
         if (index === 0) badge = '<div class="w-8 h-8 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center border border-yellow-500/30 text-xs font-bold shadow-[0_0_10px_rgba(234,179,8,0.3)]">1</div>';
         else if (index === 1) badge = '<div class="w-8 h-8 rounded-full bg-slate-300/20 text-slate-300 flex items-center justify-center border border-slate-300/30 text-xs font-bold">2</div>';
@@ -315,6 +322,16 @@ window.deleteMatch = async function(matchId) {
 };
 
 window.togglePlayerSelection = function(team, playerName) {
+    if (isGuestPlayer(playerName)) {
+        if (team === 'A') {
+            guestCountA = (guestCountA + 1) % 4; // 0 -> 1 -> 2 -> 3 -> 0
+        } else {
+            guestCountB = (guestCountB + 1) % 4; // 0 -> 1 -> 2 -> 3 -> 0
+        }
+        renderTeamChips();
+        return;
+    }
+
     if (team === 'A') {
         if (selectedTeamA.has(playerName)) selectedTeamA.delete(playerName);
         else selectedTeamA.add(playerName);
@@ -332,9 +349,10 @@ function renderTeamChips() {
     
     // Chips A
     teamAChipsContainer.innerHTML = sorted.map(p => {
-        const displayName = p.nombre;
-        const isSelected = selectedTeamA.has(p.nombre);
-        const isDisabled = selectedTeamB.has(p.nombre);
+        const isGuest = isGuestPlayer(p.nombre);
+        const isSelected = isGuest ? guestCountA > 0 : selectedTeamA.has(p.nombre);
+        const isDisabled = isGuest ? false : selectedTeamB.has(p.nombre);
+        const displayName = (isGuest && guestCountA > 1) ? `${p.nombre} x${guestCountA}` : p.nombre;
         const btnClass = isSelected 
             ? 'bg-blue-500 text-white shadow-[0_0_12px_rgba(59,130,246,0.5)] border-blue-400' 
             : (isDisabled ? 'bg-slate-800/30 text-slate-600 opacity-50 cursor-not-allowed border-transparent' : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border-white/10');
@@ -346,9 +364,10 @@ function renderTeamChips() {
 
     // Chips B
     teamBChipsContainer.innerHTML = sorted.map(p => {
-        const displayName = p.nombre;
-        const isSelected = selectedTeamB.has(p.nombre);
-        const isDisabled = selectedTeamA.has(p.nombre);
+        const isGuest = isGuestPlayer(p.nombre);
+        const isSelected = isGuest ? guestCountB > 0 : selectedTeamB.has(p.nombre);
+        const isDisabled = isGuest ? false : selectedTeamA.has(p.nombre);
+        const displayName = (isGuest && guestCountB > 1) ? `${p.nombre} x${guestCountB}` : p.nombre;
         const btnClass = isSelected 
             ? 'bg-red-500 text-white shadow-[0_0_12px_rgba(239,68,68,0.5)] border-red-400' 
             : (isDisabled ? 'bg-slate-800/30 text-slate-600 opacity-50 cursor-not-allowed border-transparent' : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border-white/10');
@@ -383,8 +402,10 @@ btnWinB.addEventListener('click', () => {
 // SUBMIT: Match
 matchForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const teamA = Array.from(selectedTeamA);
-    const teamB = Array.from(selectedTeamB);
+    const guestPlayer = appData.players.find(p => isGuestPlayer(p.nombre));
+    const guestName = guestPlayer ? guestPlayer.nombre : 'Invitado';
+    const teamA = [...Array.from(selectedTeamA), ...Array(guestCountA).fill(guestName)];
+    const teamB = [...Array.from(selectedTeamB), ...Array(guestCountB).fill(guestName)];
     const winner = matchWinnerInput.value;
 
     if (teamA.length === 0 || teamB.length === 0) return showAlert('Atención', 'Elegí los jugadores de ambos equipos.', 'warning');
@@ -408,6 +429,8 @@ matchForm.addEventListener('submit', async (e) => {
             
             selectedTeamA.clear();
             selectedTeamB.clear();
+            guestCountA = 0;
+            guestCountB = 0;
             renderTeamChips();
             matchWinnerInput.value = '';
             
@@ -702,6 +725,7 @@ function enrichPlayerData() {
         let bestPapaLosses = 0;
 
         opponents.forEach(op => {
+            if (isGuestPlayer(op)) return;
             const w = p.winsAgainst[op] || 0;
             const l = p.lossesAgainst[op] || 0;
             const diff = w - l;
@@ -832,8 +856,16 @@ function generateBalancedTeams(playersArr) {
     
     selectedTeamA.clear();
     selectedTeamB.clear();
-    bestTeamA.forEach(p => selectedTeamA.add(p.nombre));
-    bestTeamB.forEach(p => selectedTeamB.add(p.nombre));
+    guestCountA = 0;
+    guestCountB = 0;
+    bestTeamA.forEach(p => {
+        if (isGuestPlayer(p.nombre)) guestCountA++;
+        else selectedTeamA.add(p.nombre);
+    });
+    bestTeamB.forEach(p => {
+        if (isGuestPlayer(p.nombre)) guestCountB++;
+        else selectedTeamB.add(p.nombre);
+    });
     renderTeamChips();
     Toast.fire({ icon: 'success', title: 'Equipos equilibrados generados!' });
 }
